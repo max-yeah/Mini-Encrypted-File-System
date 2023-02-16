@@ -1,7 +1,7 @@
 .idea/
 cmake-build-*/
 .vscode/
-.privatekeys/
-.publickeys/
-.filesystem/
+privatekeys/
+publickeys/
+filesystem/
 fileserver

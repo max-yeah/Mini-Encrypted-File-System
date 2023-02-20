@@ -18,3 +18,10 @@ Run the fileserver binary:
 ./fileserver key_name
 ```
 
+<br>
+
+Tree structure of the files and encrypted filesystem
+
+(The random numbers appear in private keys are made up for demo purpose)
+
+![Tree structure](https://user-images.githubusercontent.com/26541990/219987892-ca6fe9d9-4531-42de-b08c-916c1a98e83f.png)

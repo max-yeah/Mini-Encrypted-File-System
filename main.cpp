@@ -101,20 +101,21 @@ RSA * read_RSAkey(string key_type, string key_path){
     return rsa;
 }
 
-//This function implement RSA public key encryption
+// This function implement RSA public key encryption
 int public_encrypt(int flen, unsigned char* from, unsigned char* to, RSA* key, int padding) {
     
     int result = RSA_public_encrypt(flen, from, to, key, padding);
     return result;
 }
 
-//This function implement RSA private key decryption
+// This function implement RSA private key decryption
 int private_decrypt(int flen, unsigned char* from, unsigned char* to, RSA* key, int padding) {
 
     int result = RSA_private_decrypt(flen, from, to, key, padding);
     return result;
 }
 
+// Write encrypted content into a file stored locally
 void create_encrypted_file(string filename, char* encrypted_content, RSA* key_pair) {
     // filename += ".bin";
     FILE* encrypted_file = fopen(&filename[0], "w");
@@ -381,6 +382,10 @@ int main(int argc, char** argv) {
             if (new_username == ""){
                 // to counter malicious input: adduser 
                 cout << "No new username provided." << endl;
+                continue;
+            }
+            if (new_username.length() > 10){
+                cout << "Invalid new username. Maximum 10 characters." << endl;
                 continue;
             }
             if (!check_invalid_username(new_username)){

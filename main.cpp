@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
@@ -179,10 +180,86 @@ int login_authentication(string key_name){
     }
 }
 
+int check_user_folders(const std::string& username)
+{
+    std::string root_folder_path = "filesystem/" + username;
+    struct stat root_folder_info{};
+    int root_folder_created = stat(root_folder_path.c_str(), &root_folder_info);
+    if (root_folder_created == -1)
+    {
+        int status = mkdir(root_folder_path.c_str(), 0777);
+        if (status == 0){
+            cout << "Root folder created successfully" << endl;
+        } else {
+            cerr << "Failed to create root folder" << endl;
+            return 1;
+        }
+    }
+
+    std::string personal_folder_path = "filesystem/" + username + "/personal/";
+    struct stat personal_folder_info{};
+    int personal_folder_created = stat(personal_folder_path.c_str(), &personal_folder_info);
+    if (personal_folder_created == -1)
+    {
+        int status = mkdir(personal_folder_path.c_str(), 0777);
+        if (status == 0){
+            cout << "Personal folder created successfully" << endl;
+        } else {
+            cerr << "Failed to create personal folder" << endl;
+            return 1;
+        }
+    }
+
+    std::string shared_folder_path = "filesystem/" + username + "/shared/";
+    struct stat shared_folder_info{};
+    int shared_folder_created = stat(shared_folder_path.c_str(), &shared_folder_info);
+    if (shared_folder_created == -1)
+    {
+        int status = mkdir(shared_folder_path.c_str(), 0777);
+        if (status == 0){
+            cout << "Shared folder created successfully" << endl;
+        } else {
+            cerr << "Failed to create shared folder" << endl;
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void command_pwd(){
     
 }
 
+void command_mkfile(const std::string& username, const std::string& filename)
+{
+    check_user_folders(username);
+    // TODO Encryption
+    // TODO Check if file of same name already exists
+    std::string full_path = "filesystem/" + username + "/personal/" + filename;
+    std::ofstream outfile(full_path);
+    if (outfile && outfile.is_open())
+    {
+        outfile.close();
+    }
+}
+
+std::string command_cat(const std::string& username, const std::string& filename)
+{
+    check_user_folders(username);
+    // TODO Encryption
+    std::string full_path = "filesystem/" + username + "/personal/" + filename;
+    std::ifstream infile(full_path);
+    if (infile && infile.is_open())
+    {
+        std::string contents;
+        infile >> contents;
+        infile.close();
+        return contents;
+    } else {
+        cerr << "Failed to read file" << endl;
+        return "";
+    }
+}
 
 int main(int argc, char** argv) {
 
@@ -269,25 +346,28 @@ int main(int argc, char** argv) {
 
         // }
 
-
         /* File commands section*/
-        // 5. cat 
-        //
-        // else if (user_command ....) {
-            // command_cat(...);
-        // }
 
-        // 6. share 
-        //
-        // else if (user_command ....) {
+        // 5. cat
+        else if (user_command.rfind("cat ", 0) == 0)
+        {
+            std::string filename = user_command.substr(4, user_command.length() - 4);
+            std::string contents = command_cat(username, filename);
+            std::cout << contents;
+        }
 
-        // }
-
-        // 7. mkfile 
-        //
+        // 6. share
         // else if (user_command ....) {
 
         // }
+
+        // 7. mkfile
+        else if (user_command.rfind("mkfile ", 0) == 0)
+        {
+            std::string filename = user_command.substr(7, user_command.length() - 7);
+            std::cout << filename;
+            command_mkfile(username, filename);
+        }
 
         /* Admin specific feature */
         // 8. adduser 

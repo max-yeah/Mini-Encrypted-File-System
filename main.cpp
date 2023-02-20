@@ -243,6 +243,9 @@ int main(int argc, char** argv) {
 
     /* ....Implement fileserver different commands...... */
     vector<string> dir;
+    if (username != "Admin") {
+        dir.push_back(username);
+    }
     
     while (true){
         cout << endl;

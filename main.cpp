@@ -251,7 +251,7 @@ void cmd_adduser(string new_username){
     create_RSA(key_name);
     cout << "User " << new_username << " Public/Private key pair has been created." << endl;
     cout << "The private key_name is " << key_name << endl;
-    cout << "Please give this key_name to user and let user know that it must be remained secrete to him/herself only." << endl;
+    cout << "Please give this key_name to user and let user know that it must be remained secret to him/herself only." << endl;
     cout << "User " << new_username << " can login by command: " << endl;
     cout << "./fileserver " << key_name << endl << endl;
 

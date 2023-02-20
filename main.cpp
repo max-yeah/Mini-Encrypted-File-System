@@ -4,7 +4,8 @@
 #include <openssl/err.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include<cstdlib>
+#include <cstdlib>
+#include <vector>
 
 using namespace std;
 
@@ -179,8 +180,17 @@ int login_authentication(string key_name){
     }
 }
 
-void command_pwd(){
-    
+void command_pwd(vector<string>& dir) {
+    if (dir.empty()) {
+        cout << "/";
+    }
+    else {
+        for (string str:dir) {
+            cout << "/" << str;
+        }
+    }
+    cout << endl;
+    return;
 }
 
 
@@ -232,6 +242,7 @@ int main(int argc, char** argv) {
     }
 
     /* ....Implement fileserver different commands...... */
+    vector<string> dir;
     
     while (true){
         cout << endl;
@@ -247,9 +258,9 @@ int main(int argc, char** argv) {
         /* Directory commands */
         // 1. pwd 
         //
-        // else if (user_command == "pwd") {
-        //     command_pwd(...);
-        // }
+        else if (user_command == "pwd") {
+            command_pwd(dir);
+        }
 
         // 2. cd  
         //

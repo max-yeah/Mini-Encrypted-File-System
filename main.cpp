@@ -402,7 +402,7 @@ int main(int argc, char** argv) {
 
         // 2. cd  
         //
-        else if (user_command.substr(0, 2) == "cd") {
+        else if (user_command.substr(0, 2) == "cd" && user_command.substr(2, 1) == " ") {
             command_cd(dir, user_command.substr(3), username);
         }
 

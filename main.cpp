@@ -40,7 +40,7 @@ void create_RSA(string key_name) {
         
         //generate private key and store to local
         fp1 = fopen(&privatekey_path[0], "w");
-        PEM_write_RSAPrivateKey(fp1, keypair, NULL, NULL, NULL, NULL, NULL);
+        PEM_write_RSAPrivateKey(fp1, keypair, NULL, NULL, 0, NULL, NULL);
         fclose(fp1);
     } else {
         // normal user's public key & private key file creation
@@ -68,12 +68,12 @@ void create_RSA(string key_name) {
         
         //generate private key and store to local
         fp1 = fopen(&privatekey_path[0], "w");
-        PEM_write_RSAPrivateKey(fp1, keypair, NULL, NULL, NULL, NULL, NULL);
+        PEM_write_RSAPrivateKey(fp1, keypair, NULL, NULL, 0, NULL, NULL);
         fclose(fp1);
 
         //Store a copy of private key in privatekeys for admin usage only
         fp2 = fopen(&privatekey_foradmin_path[0], "w");
-        PEM_write_RSAPrivateKey(fp2, keypair, NULL, NULL, NULL, NULL, NULL);
+        PEM_write_RSAPrivateKey(fp2, keypair, NULL, NULL, 0, NULL, NULL);
         fclose(fp2);
     }
 

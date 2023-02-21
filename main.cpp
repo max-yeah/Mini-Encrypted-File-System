@@ -388,7 +388,7 @@ int main(int argc, char** argv) {
                 cout << "Invalid new username. Maximum 10 characters." << endl;
                 continue;
             }
-            if (new_username == "admin" || new_username == "Admin"){
+            if (strcasecmp(new_username.c_str(),"admin") == 0){
                 cout << "Invalid new username: " << new_username << endl;
                 continue;
             }

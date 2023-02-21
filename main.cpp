@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include<cstdlib>
+#include <string.h>
 
 using namespace std;
 

@@ -388,6 +388,10 @@ int main(int argc, char** argv) {
                 cout << "Invalid new username. Maximum 10 characters." << endl;
                 continue;
             }
+            if (new_username == "admin" || new_username == "Admin"){
+                cout << "Invalid new username: " << new_username << endl;
+                continue;
+            }
             if (!check_invalid_username(new_username)){
                 cout << "Invalid new username. Only alphabets and numbers are allowed in a username." << endl;
                 continue;

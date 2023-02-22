@@ -5,3 +5,4 @@ privatekeys/
 publickeys/
 filesystem/
 fileserver
+Admin_*_privatekey

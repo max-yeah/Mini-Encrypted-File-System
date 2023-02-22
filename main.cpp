@@ -295,7 +295,7 @@ void command_cd(vector<string>& dir, string change_dir, string username) {
     
     // build new directory
     for (string seg : seglist) {
-        if (seg == ".") {
+        if (seg == "." || seg.empty()) {
             continue;
         }
         else if (seg == "..") {
@@ -304,10 +304,6 @@ void command_cd(vector<string>& dir, string change_dir, string username) {
                 return;
             }
             new_dir.pop_back();
-        }
-        else if (seg.empty()) {
-            cout << "Invalid directory!" << endl;
-            return;
         }
         else {
             new_dir.push_back(seg);
@@ -320,7 +316,9 @@ void command_cd(vector<string>& dir, string change_dir, string username) {
         check_dir = check_dir + "/" + username;
     }
     for (string str : new_dir) {
-        check_dir = check_dir + "/" + str;
+        if (!str.empty()) {
+            check_dir = check_dir + "/" + str;
+        }
     }
     // cout << "TEST: " << check_dir << endl;
     if ( filesystem::is_directory(filesystem::status(check_dir)) ) {

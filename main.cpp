@@ -289,7 +289,7 @@ void command_cd(vector<string>& dir, string change_dir, string username) {
     }
     
     // if the input started by "." or "..", use the current directory for prefix
-    if (seglist[0] == "." || seglist[0] == "..") {
+    if (seglist[0] == "." || seglist[0] == ".." || !seglist[0].empty()) {
         new_dir = dir;
     }
     

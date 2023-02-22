@@ -285,9 +285,9 @@ void command_cd(vector<string>& dir, string change_dir, string username) {
     // split input by '/'
     while(getline(test, segment, '/'))
     {
-    seglist.push_back(segment);
+        seglist.push_back(segment);
     }
-
+    
     // if the input started by "." or "..", use the current directory for prefix
     if (seglist[0] == "." || seglist[0] == "..") {
         new_dir = dir;
@@ -304,6 +304,10 @@ void command_cd(vector<string>& dir, string change_dir, string username) {
                 return;
             }
             new_dir.pop_back();
+        }
+        else if (seg.empty()) {
+            cout << "Invalid directory!" << endl;
+            return;
         }
         else {
             new_dir.push_back(seg);

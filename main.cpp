@@ -353,9 +353,8 @@ void command_mkfile(const std::string& username, const std::string& filename, co
     // TODO Check if file of same name already exists
     std::string full_path = "filesystem/" + username + "/personal/" + filename;
 
-        char message[] = "My secret";
-//        char *message = new char[contents.length() + 1];
-//        strcpy(message, contents.c_str());
+        char *message = new char[contents.length() + 1];
+        strcpy(message, contents.c_str());
 
         char *encrypt;
 
@@ -375,53 +374,6 @@ void command_mkfile(const std::string& username, const std::string& filename, co
 //        outfile << encrypt;
 //        outfile.close();
         create_encrypted_file(full_path, encrypt, public_key);
-
-
-        // -----------------------
-
-        std::ifstream infile(full_path);
-
-        if (!(infile && infile.is_open())) {
-            cout << "errorrr" << endl;
-            return;
-        }
-
-        infile.seekg(0, std::ios::end);
-        size_t length = infile.tellg();
-        cout << "length " << length;
-        infile.seekg(0, std::ios::beg);
-
-        char *contentss = (char*)malloc(RSA_size(public_key));;
-        infile.read(contentss, length);
-        infile.close();
-
-        cout << endl << "encrypt " << encrypt << endl;
-        cout << endl << "strlen encrypt " << strlen(encrypt) << endl;
-
-        cout << endl << "contentss " << contentss << endl;
-        cout << endl << "strlen contentss " << strlen(contentss) << endl;
-
-        char *decrypt = nullptr;
-
-        std::string private_key_path;
-        RSA *private_key;
-        private_key_path = "./filesystem/" + username + "/" + "rob_79035964" + "_privatekey";
-
-        private_key = read_RSAkey("private", private_key_path);
-
-        cout << endl << "strlen RSA_size " << RSA_size(private_key) << endl;
-//        decrypt = (char*)malloc(strlen(contents.c_str()));
-        decrypt = (char*)malloc(RSA_size(public_key));
-
-        cout << endl << "strlen(encrypt) " << strlen(encrypt) << endl;
-
-        int decrypt_length = private_decrypt(RSA_size(private_key), (unsigned char*)contentss, (unsigned char*)decrypt, private_key, RSA_PKCS1_OAEP_PADDING);
-        if(decrypt_length == -1) {
-            cout << "An error occurred in private_decrypt() method" << endl;
-            return;
-        }
-
-        cout << "decrypt " << decrypt;
     }
 
 

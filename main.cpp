@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
@@ -9,6 +10,7 @@
 #include <vector>
 #include <sstream>
 #include <filesystem>
+#include <regex>
 
 
 using namespace std;
@@ -333,6 +335,110 @@ void command_cd(vector<string>& dir, string change_dir, string username) {
     return;
 }
 
+bool is_admin(string username) {
+    if (strcasecmp(username.c_str(), "admin") == 0) {
+        return true;
+    }
+    return false;
+}
+
+void command_sharefile(string username, string user_command) {
+    // check who is the username
+    if (is_admin(username) == true) {
+        cout << "You are not allowed to share." << endl;
+        return;
+    }
+
+    // group 1 must always be 'share', group 4 if using quotes or group 6 without quotes, group 7 is the user
+    // regex rgx("^([A-Za-z0-9]+)\\s+((\"|')?([A-Za-z0-9\\s.]+)(\\3)|([A-Za-z0-9.]+))\\s+([a-z0-9]+)");
+    regex rgx("^share\\s+((\"|')?([A-Za-z0-9\\-_\\s.]+)(\\3)|([A-Za-z0-9\\-_.]+))\\s+([a-z0-9_]+)");
+    
+    smatch matches;
+
+    string filename, target_username, match_string;
+    if (regex_search(user_command, matches, rgx)) {
+        for (size_t i = 0; i < matches.size(); ++i) {
+            match_string = matches[i].str();
+            if ((i == 3 || i == 5) && match_string.length() > 0) {
+                // cout << "filename" << ": '" << match_string << "'" << endl;
+                filename = match_string;
+            }
+            if (i == 6) {
+                // cout << "username" << ": '" << match_string << "'" << endl;
+                target_username = match_string;
+            }
+        }
+    } else {
+        cout << "Invalid share command. You should use command: " << endl;
+        cout << "share <filename> username" << endl;
+        return;
+    }
+
+    // TODO: use encrypted name instead of filename
+    // check file exists by reading it
+    string filepath = filesystem::current_path().string() + "/" + filename;
+    // cout << "FUll PATH: " << filepath << endl;
+    
+    // FILE  *fp  = NULL;
+    // fp = fopen(&filepath[0], "rb");
+    // if (fp == NULL) {
+    //     cout << "Invalid filename command. File does not exist: " << endl;
+    //     return;
+    // }
+    // // prepare file content for decryption before closing fp
+    // fclose(fp);
+
+    ifstream ifs;
+    ifs.open(filepath);
+    if (!(ifs && ifs.is_open())) {
+        cout << "Invalid filename command. File does not exist: " << endl;
+        return;
+    }
+    ifs.seekg(0, ios::end);
+    size_t full_size = ifs.tellg();
+    // cout << "full size:" << full_size;
+    // rewind to allow reading
+    ifs.seekg(0, ios::beg);
+
+    // create file content buffer
+    char* file_content = new char[full_size];
+    ifs.read(file_content, full_size);
+    ifs.close();
+
+    // debug to see contents in hex
+    // cout << file_content << endl;
+    // for(int i = 0; i<full_size; ++i) {
+    //     cout << hex << (int) file_content[i];
+    // }
+
+    // check that the user cannot share to themselves
+    if (target_username == username) {
+        cout << "You cannot share files to yourself." << endl;
+        return;
+    }
+
+    // check that target username exists (a valid user have a public key)
+    RSA * target_public_key;
+    target_public_key = read_RSAkey("public", "./publickeys/" + target_username + "_publickey");
+
+    if (target_public_key == NULL){
+        //not such key by searching the provided key_name
+        cout << "Invalid username is provided. User does not exits." << endl;
+        return;
+    }
+
+    // decrypt file for copying
+    char* descrypted_file_content = new char[full_size];
+
+    // encrypt shared file with target's public key
+
+    // if exists, overwrite
+
+    // else copy
+
+}
+
+
 
 int main(int argc, char** argv) {
 
@@ -430,9 +536,9 @@ int main(int argc, char** argv) {
 
         // 6. share 
         //
-        // else if (user_command ....) {
-
-        // }
+        else if (user_command.rfind("share", 0) == 0) {
+            command_sharefile(username, user_command);
+        }
 
         // 7. mkfile 
         //

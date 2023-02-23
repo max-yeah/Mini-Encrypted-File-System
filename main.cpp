@@ -444,6 +444,10 @@ int main(int argc, char** argv) {
         // 8. adduser <username>
         // check if user_command start with adduser
         else if (user_command.rfind("adduser", 0) == 0) {
+            if (username != "Admin"){
+                cout << "Forbidden. Only Admin can perform adduser command." << endl;
+                continue; 
+            }
             size_t pos = user_command.find(" ");
             if (pos == -1) {
                 // to counter malicious input: adduser

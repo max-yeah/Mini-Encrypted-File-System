@@ -8,6 +8,7 @@
 #include<cstdlib>
 #include <string.h>
 #include <vector>
+#include <algorithm>
 
 
 using namespace std;
@@ -91,7 +92,7 @@ RSA * read_RSAkey(string key_type, string key_path){
 
     fp = fopen(&key_path[0], "rb");
     if (fp == NULL){
-        //invalid key_name provided
+        cout << "invalid key_name provided";
         return rsa;
     }
 
@@ -197,6 +198,8 @@ int login_authentication(string key_name){
             // cout << "An error occurred in public_encrypt() method" << endl;
             return 1;
         }
+
+        cout << "encrypt " << encrypt;
         
         // Try to do RSA decryption using corresponding private key
         decrypt = (char *)malloc(encrypt_length);
@@ -213,6 +216,21 @@ int login_authentication(string key_name){
             return 1;
         }
     }
+}
+
+vector<string> split_string(const std::string& ipstr, const std::string& delimiter)
+{
+    size_t pos;
+    std::string token;
+    std::string ipstrcpy = ipstr;
+    vector<string> splits;
+    while ((pos = ipstrcpy.find(delimiter)) != std::string::npos) {
+        token = ipstrcpy.substr(0, pos);
+        splits.push_back(token);
+        ipstrcpy.erase(0, pos + delimiter.length());
+    }
+    splits.push_back(ipstrcpy);
+    return splits;
 }
 
 int check_user_folders(const std::string& username)
@@ -321,31 +339,162 @@ void command_pwd(vector<string>& dir) {
     return;
 }
 
-void command_mkfile(const std::string& username, const std::string& filename)
+void command_mkfile(const std::string& username, const std::string& filename, const std::string& contents)
 {
-    check_user_folders(username);
+//    check_user_folders(username);
     // TODO Encryption
     // TODO Check if file of same name already exists
     std::string full_path = "filesystem/" + username + "/personal/" + filename;
     std::ofstream outfile(full_path);
     if (outfile && outfile.is_open())
     {
+//        char message[] = "My secret";
+////        char *message = new char[contents.length() + 1];
+////        strcpy(message, contents.c_str());
+//
+//        char *encrypt = nullptr;
+//        string public_key_path = "./publickeys/" + username + "_publickey";
+//        RSA *public_key = read_RSAkey("public", public_key_path);
+//        encrypt = (char*)malloc(RSA_size(public_key));
+//        int encrypt_length = public_encrypt(strlen(message) + 1, (unsigned char*)message, (unsigned char*)encrypt, public_key, RSA_PKCS1_OAEP_PADDING);
+//        cout << "encrypt_length" << encrypt_length;
+//        if(encrypt_length == -1) {
+//            cout << "An error occurred in public_encrypt() method" << endl;
+//            return;
+//        }
+//
+//        // -----------------------
+//
+//        char *decrypt = nullptr;
+//
+//        std::string private_key_path;
+//        RSA *private_key;
+//        private_key_path = "./filesystem/" + username + "/" + "rob_79035964" + "_privatekey";
+//
+//        private_key = read_RSAkey("private", private_key_path);
+//
+////        decrypt = (char*)malloc(strlen(contents.c_str()));
+//        decrypt = (char*)malloc(encrypt_length);
+//
+//        cout << endl << "strlen(encrypt) " << strlen(encrypt) << endl;
+//
+//        int decrypt_length = private_decrypt(256, (unsigned char*)encrypt, (unsigned char*)decrypt, private_key, RSA_PKCS1_OAEP_PADDING);
+//        if(decrypt_length == -1) {
+//            cout << "An error occurred in private_decrypt() method" << endl;
+//            return;
+//        }
+//
+//        cout << "decrypt " << decrypt;
+//
+//        // -------------------------------------------------
+//
+//        outfile << encrypt;
+//        outfile.close();
+
+        char message[] = "My secret";
+//        char *message = new char[contents.length() + 1];
+//        strcpy(message, contents.c_str());
+
+        char *encrypt = nullptr;
+        string public_key_path = "./publickeys/" + username + "_publickey";
+        RSA *public_key = read_RSAkey("public", public_key_path);
+        encrypt = (char*)malloc(RSA_size(public_key));
+        int encrypt_length = public_encrypt(strlen(message) + 1, (unsigned char*)message, (unsigned char*)encrypt, public_key, RSA_PKCS1_OAEP_PADDING);
+        cout << "encrypt_length" << encrypt_length;
+        if(encrypt_length == -1) {
+            cout << "An error occurred in public_encrypt() method" << endl;
+            return;
+        }
+
+        outfile << encrypt;
         outfile.close();
+
+        // -----------------------
+
+        std::ifstream infile(full_path);
+
+        if (!(infile && infile.is_open())) {
+            cout << "errorrr" << endl;
+            return;
+        }
+
+        infile.seekg(0, std::ios::end);
+        size_t length = infile.tellg();
+        cout << "length " << length;
+        infile.seekg(0, std::ios::beg);
+
+        char *contentss = (char*)malloc(encrypt_length);;
+        infile.read(contentss, length);
+        infile.close();
+
+        cout << endl << "encrypt " << encrypt << endl;
+        cout << endl << "strlen encrypt " << strlen(encrypt) << endl;
+
+        cout << endl << "contentss " << contentss << endl;
+        cout << endl << "strlen contentss " << strlen(contentss) << endl;
+
+        char *decrypt = nullptr;
+
+        std::string private_key_path;
+        RSA *private_key;
+        private_key_path = "./filesystem/" + username + "/" + "rob_79035964" + "_privatekey";
+
+        private_key = read_RSAkey("private", private_key_path);
+
+        cout << endl << "strlen RSA_size " << RSA_size(private_key) << endl;
+//        decrypt = (char*)malloc(strlen(contents.c_str()));
+        decrypt = (char*)malloc(encrypt_length);
+
+        cout << endl << "strlen(encrypt) " << strlen(encrypt) << endl;
+
+        int decrypt_length = private_decrypt(RSA_size(private_key), (unsigned char*)contentss, (unsigned char*)decrypt, private_key, RSA_PKCS1_OAEP_PADDING);
+        if(decrypt_length == -1) {
+            cout << "An error occurred in private_decrypt() method" << endl;
+            return;
+        }
+
+        cout << "decrypt " << decrypt;
     }
 }
 
-std::string command_cat(const std::string& username, const std::string& filename)
+std::string command_cat(const std::string& username, const std::string& filename, const std::string& key_name)
 {
-    check_user_folders(username);
+//    check_user_folders(username);
     // TODO Encryption
     std::string full_path = "filesystem/" + username + "/personal/" + filename;
     std::ifstream infile(full_path);
     if (infile && infile.is_open())
     {
-        std::string contents;
-        infile >> contents;
+        infile.seekg(0, std::ios::end);
+        size_t length = infile.tellg();
+        cout << "length " << length;
+        infile.seekg(0, std::ios::beg);
+
+        char *contentss = (char*)malloc(256);;
+        infile.read(contentss, length);
         infile.close();
-        return contents;
+
+        cout << endl << "contentss " << contentss << endl;
+        cout << endl << "strlen contentss " << strlen(contentss) << endl;
+
+        char *decrypt = nullptr;
+
+        std::string private_key_path;
+        RSA *private_key;
+        private_key_path = "./filesystem/" + username + "/" + "rob_79035964" + "_privatekey";
+
+        private_key = read_RSAkey("private", private_key_path);
+
+        cout << endl << "strlen RSA_size " << RSA_size(private_key) << endl;
+        decrypt = (char*)malloc(256);
+
+        int decrypt_length = private_decrypt(RSA_size(private_key), (unsigned char*)contentss, (unsigned char*)decrypt, private_key, RSA_PKCS1_OAEP_PADDING);
+        if(decrypt_length == -1) {
+            cout << "An error occurred in private_decrypt() method" << endl;
+        }
+
+        cout << "decrypt " << decrypt;
+        return decrypt;
     } else {
         cerr << "Failed to read file" << endl;
         return "";
@@ -407,6 +556,7 @@ int main(int argc, char** argv) {
         cout << "> ";
         getline(cin,user_command);
         // cout << "User input: " << user_command << endl;
+        vector<string> splits = split_string(user_command, " ");
 
         if (user_command == "exit") {
             cout << "Fileserver closed. Goodbye " << username << " :)" << endl;
@@ -441,10 +591,10 @@ int main(int argc, char** argv) {
         /* File commands section*/
 
         // 5. cat
-        else if (user_command.rfind("cat ", 0) == 0)
+//        else if (user_command.rfind("cat ", 0) == 0)
+        else if (splits[0] == "cat")
         {
-            std::string filename = user_command.substr(4, user_command.length() - 4);
-            std::string contents = command_cat(username, filename);
+            std::string contents = command_cat(username, splits[1], key_name);
             std::cout << contents;
         }
 
@@ -454,11 +604,10 @@ int main(int argc, char** argv) {
         // }
 
         // 7. mkfile
-        else if (user_command.rfind("mkfile ", 0) == 0)
+        else if (splits[0] == "mkfile")
         {
-            std::string filename = user_command.substr(7, user_command.length() - 7);
-            std::cout << filename;
-            command_mkfile(username, filename);
+            cout << "here";
+            command_mkfile(username, splits[1], splits[2]);
         }
 
         /* Admin specific feature */

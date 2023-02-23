@@ -125,7 +125,12 @@ int private_decrypt(int flen, unsigned char* from, unsigned char* to, RSA* key, 
 // Write encrypted content into a file stored locally
 void create_encrypted_file(string filename, char* encrypted_content, RSA* key_pair) {
     // filename += ".bin";
-    FILE* encrypted_file = fopen(&filename[0], "w");
+    FILE* encrypted_file = fopen(&filename[0], "wb");
+    if (encrypted_file == nullptr)
+    {
+        cout << "Unable to create file, please check directory permissions" << endl;
+        return;
+    }
     fwrite(encrypted_content, sizeof(*encrypted_content), RSA_size(key_pair), encrypted_file);
     fclose(encrypted_file);
 }
@@ -301,9 +306,9 @@ void command_pwd(vector<string>& dir) {
     return;
 }
 
-void command_mkfile(const std::string& username, const std::string& filename, const std::string& contents)
+void command_mkfile(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& contents)
 {
-    std::string full_path = "filesystem/" + username + "/personal/" + filename;
+    std::string full_path = "filesystem/" + username + "/" + curr_dir + filename;
 
     char *message = new char[contents.length() + 1];
     strcpy(message, contents.c_str());
@@ -324,9 +329,9 @@ void command_mkfile(const std::string& username, const std::string& filename, co
 }
 
 
-std::string command_cat(const std::string& username, const std::string& filename, const std::string& key_name)
+std::string command_cat(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& key_name)
 {
-    std::string full_path = "filesystem/" + username + "/personal/" + filename;
+    std::string full_path = "filesystem/" + username + "/" + curr_dir + filename;
     std::ifstream infile(full_path);
 
     if (!(infile && infile.is_open())) {
@@ -513,7 +518,13 @@ int main(int argc, char** argv) {
 //        else if (user_command.rfind("cat ", 0) == 0)
         else if (splits[0] == "cat")
         {
-            std::string contents = command_cat(username, splits[1], key_name);
+            std::string curr_dir;
+            for (const string& str:dir) {
+                curr_dir.append(str);
+                curr_dir.append("/");
+            }
+
+            std::string contents = command_cat(username, splits[1], curr_dir, key_name);
             std::cout << contents;
         }
 
@@ -525,12 +536,25 @@ int main(int argc, char** argv) {
         // 7. mkfile
         else if (splits[0] == "mkfile")
         {
+            std::string curr_dir;
+            for (const string& str:dir) {
+                curr_dir.append(str);
+                curr_dir.append("/");
+            }
+            cout << "curr_dir " << curr_dir << endl;
+
             if (username == "Admin")
             {
                 cout << "Sorry, admin cannot create files" << endl;
                 continue;
             }
-            command_mkfile(username, splits[1], splits[2]);
+
+            if (curr_dir.empty() || curr_dir == "shared/")
+            {
+                cout << "Forbidden";
+                continue;
+            }
+            command_mkfile(username, splits[1], curr_dir, splits[2]);
         }
 
         /* Admin specific feature */

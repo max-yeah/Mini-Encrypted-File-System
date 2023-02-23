@@ -135,14 +135,6 @@ void create_encrypted_file(string filename, char* encrypted_content, RSA* key_pa
     fclose(encrypted_file);
 }
 
-// Write encrypted content into a file stored locally
-void read_encrypted_file(string filename, char* encrypted_content, RSA* key_pair) {
-    // filename += ".bin";
-    FILE* encrypted_file = fopen(&filename[0], "r");
-    fread(encrypted_content, sizeof(*encrypted_content), RSA_size(key_pair), encrypted_file);
-    fclose(encrypted_file);
-}
-
 int initial_folder_setup(){
     //create "filesystem", "privatekeys","publickeys" folders
         int status1 = mkdir("filesystem", 0777);
@@ -515,7 +507,6 @@ int main(int argc, char** argv) {
         /* File commands section*/
 
         // 5. cat
-//        else if (user_command.rfind("cat ", 0) == 0)
         else if (splits[0] == "cat")
         {
             std::string curr_dir;
@@ -541,7 +532,6 @@ int main(int argc, char** argv) {
                 curr_dir.append(str);
                 curr_dir.append("/");
             }
-            cout << "curr_dir " << curr_dir << endl;
 
             if (username == "Admin")
             {
@@ -554,6 +544,13 @@ int main(int argc, char** argv) {
                 cout << "Forbidden";
                 continue;
             }
+
+            if (splits.size() < 3 || splits[2].empty())
+            {
+                cout << "File cannot be empty";
+                continue;
+            }
+
             command_mkfile(username, splits[1], curr_dir, splits[2]);
         }
 

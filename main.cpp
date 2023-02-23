@@ -301,32 +301,29 @@ void command_pwd(vector<string>& dir) {
 
 void command_mkfile(const std::string& username, const std::string& filename, const std::string& contents)
 {
-    // TODO Encryption
-    // TODO Check if file of same name already exists
     std::string full_path = "filesystem/" + username + "/personal/" + filename;
 
-        char *message = new char[contents.length() + 1];
-        strcpy(message, contents.c_str());
+    char *message = new char[contents.length() + 1];
+    strcpy(message, contents.c_str());
 
-        char *encrypt;
+    char *encrypt;
 
-        string public_key_path = "./publickeys/" + username + "_publickey";
-        RSA *public_key = read_RSAkey("public", public_key_path);
+    string public_key_path = "./publickeys/" + username + "_publickey";
+    RSA *public_key = read_RSAkey("public", public_key_path);
 
-        encrypt = (char*)malloc(RSA_size(public_key));
-        int encrypt_length = public_encrypt(strlen(message) + 1, (unsigned char*)message, (unsigned char*)encrypt, public_key, RSA_PKCS1_OAEP_PADDING);
-        if(encrypt_length == -1) {
-            cout << "An error occurred in public_encrypt() method" << endl;
-            return;
-        }
-
-        create_encrypted_file(full_path, encrypt, public_key);
+    encrypt = (char*)malloc(RSA_size(public_key));
+    int encrypt_length = public_encrypt(strlen(message) + 1, (unsigned char*)message, (unsigned char*)encrypt, public_key, RSA_PKCS1_OAEP_PADDING);
+    if(encrypt_length == -1) {
+        cout << "An error occurred in public_encrypt() method" << endl;
+        return;
     }
+
+    create_encrypted_file(full_path, encrypt, public_key);
+}
 
 
 std::string command_cat(const std::string& username, const std::string& filename, const std::string& key_name)
 {
-    // TODO Encryption
     std::string full_path = "filesystem/" + username + "/personal/" + filename;
     std::ifstream infile(full_path);
 
@@ -346,11 +343,11 @@ std::string command_cat(const std::string& username, const std::string& filename
     infile.read(contentss, length);
     infile.close();
 
-    char *decrypt = nullptr;
+    char *decrypt;
 
     std::string private_key_path;
     RSA *private_key;
-    private_key_path = "./filesystem/" + username + "/" + "rob_79035964" + "_privatekey";
+    private_key_path = "./filesystem/" + username + "/" + key_name + "_privatekey";
 
     private_key = read_RSAkey("private", private_key_path);
 
@@ -469,6 +466,11 @@ int main(int argc, char** argv) {
         // 7. mkfile
         else if (splits[0] == "mkfile")
         {
+            if (username == "Admin")
+            {
+                cout << "Sorry, admin cannot create files" << endl;
+                continue;
+            }
             command_mkfile(username, splits[1], splits[2]);
         }
 

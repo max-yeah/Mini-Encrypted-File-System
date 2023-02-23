@@ -445,12 +445,35 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
     // cout << decrypted_file_content << endl;
 
     // encrypt shared file with target's public key
-    //char *share_encrypted_content = (char*)malloc();
+    char *share_encrypted_content = (char*)malloc(RSA_size(target_public_key));
+    int share_encrypt_length = public_encrypt(strlen(decrypted_file_content) + 1, (unsigned char*)decrypted_file_content, (unsigned char*)share_encrypted_content, target_public_key, RSA_PKCS1_OAEP_PADDING);
+    if (share_encrypt_length == -1) {
+        cout << "An error occurred during file share" << endl;
+        return;
+    }
 
-    // if exists, overwrite
+    // directory exists?
+    string target_share_directory = "./filesystem/" + target_username + "/shared/" + username;
+    cout << "Target directory:" << target_share_directory << endl;
+    if (!filesystem::is_directory(filesystem::status(target_share_directory))) {
+        int dir_create_status = mkdir(&target_share_directory[0], 0777);
+        if (dir_create_status != 0) {
+            cout << "An error occurred during file share" << endl;
+            return;
+        }
+    }
 
-    // else copy
-
+    // now write new file
+    string target_filepath = target_share_directory + "/" + filename;
+    FILE * fp;
+    fp = fopen(target_filepath.c_str(),"w");
+    if (fp == NULL) {
+        cout << "An error occurred during file share" << endl;
+        return;
+    }
+    fputs(share_encrypted_content, fp);
+    fclose(fp);
+    cout << "File '" << filename << "' has been successfully shared with user '" << target_username << "'" << endl;
 }
 
 

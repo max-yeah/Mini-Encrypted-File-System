@@ -5,10 +5,12 @@
 #include <openssl/err.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include<cstdlib>
+#include <cstdlib>
 #include <string.h>
 #include <vector>
 #include <algorithm>
+#include <sstream>
+#include <filesystem>
 
 
 using namespace std;
@@ -361,6 +363,63 @@ std::string command_cat(const std::string& username, const std::string& filename
     return decrypt;
 }
 
+void command_cd(vector<string>& dir, string change_dir, string username) {
+    stringstream test(change_dir);
+    string segment;
+    vector<string> seglist;
+    vector<string> new_dir;
+
+    // split input by '/'
+    while(getline(test, segment, '/'))
+    {
+        seglist.push_back(segment);
+    }
+    
+    // if the input started by "." or "..", use the current directory for prefix
+    if (seglist[0] == "." || seglist[0] == ".." || !seglist[0].empty()) {
+        new_dir = dir;
+    }
+    
+    // build new directory
+    for (string seg : seglist) {
+        if (seg == "." || seg.empty()) {
+            continue;
+        }
+        else if (seg == "..") {
+            if (new_dir.empty()) {
+                cout << "Invalid directory!" << endl;
+                return;
+            }
+            new_dir.pop_back();
+        }
+        else {
+            new_dir.push_back(seg);
+        }
+    }
+
+    // convert new directory to string in order to use std::filesystem functions
+    string check_dir = filesystem::current_path().string() + "/" + "filesystem";
+    if (username != "Admin") {
+        check_dir = check_dir + "/" + username;
+    }
+    for (string str : new_dir) {
+        if (!str.empty()) {
+            check_dir = check_dir + "/" + str;
+        }
+    }
+    // cout << "TEST: " << check_dir << endl;
+    if ( filesystem::is_directory(filesystem::status(check_dir)) ) {
+        dir = new_dir;
+        cout << "Change directory to: ";
+        command_pwd(dir); 
+    }
+    else {
+        cout << "Invalid directory!" << endl;
+    }
+
+    return;
+}
+
 int main(int argc, char** argv) {
 
     string username, user_command, key_name;
@@ -432,9 +491,9 @@ int main(int argc, char** argv) {
 
         // 2. cd  
         //
-        // else if (user_command ....) {
-
-        // }
+        else if (user_command.substr(0, 2) == "cd" && user_command.substr(2, 1) == " ") {
+            command_cd(dir, user_command.substr(3), username);
+        }
 
         // 3. ls  
         //
@@ -478,6 +537,10 @@ int main(int argc, char** argv) {
         // 8. adduser <username>
         // check if user_command start with adduser
         else if (user_command.rfind("adduser", 0) == 0) {
+            if (username != "Admin"){
+                cout << "Forbidden. Only Admin can perform adduser command." << endl;
+                continue; 
+            }
             size_t pos = user_command.find(" ");
             if (pos == -1) {
                 // to counter malicious input: adduser

@@ -206,7 +206,6 @@ int login_authentication(string key_name){
             // cout << "An error occurred in public_encrypt() method" << endl;
             return 1;
         }
-        cout << "initial strlen(encrypt) " << strlen(encrypt);
         
         // Try to do RSA decryption using corresponding private key
         decrypt = (char *)malloc(encrypt_length);
@@ -238,52 +237,6 @@ vector<string> split_string(const std::string& ipstr, const std::string& delimit
     }
     splits.push_back(ipstrcpy);
     return splits;
-}
-
-int check_user_folders(const std::string& username)
-{
-    std::string root_folder_path = "filesystem/" + username;
-    struct stat root_folder_info{};
-    int root_folder_created = stat(root_folder_path.c_str(), &root_folder_info);
-    if (root_folder_created == -1)
-    {
-        int status = mkdir(root_folder_path.c_str(), 0777);
-        if (status == 0){
-            cout << "Root folder created successfully" << endl;
-        } else {
-            cerr << "Failed to create root folder" << endl;
-            return 1;
-        }
-    }
-
-    std::string personal_folder_path = "filesystem/" + username + "/personal/";
-    struct stat personal_folder_info{};
-    int personal_folder_created = stat(personal_folder_path.c_str(), &personal_folder_info);
-    if (personal_folder_created == -1)
-    {
-        int status = mkdir(personal_folder_path.c_str(), 0777);
-        if (status == 0){
-            cout << "Personal folder created successfully" << endl;
-        } else {
-            cerr << "Failed to create personal folder" << endl;
-            return 1;
-        }
-    }
-
-    std::string shared_folder_path = "filesystem/" + username + "/shared/";
-    struct stat shared_folder_info{};
-    int shared_folder_created = stat(shared_folder_path.c_str(), &shared_folder_info);
-    if (shared_folder_created == -1)
-    {
-        int status = mkdir(shared_folder_path.c_str(), 0777);
-        if (status == 0){
-            cout << "Shared folder created successfully" << endl;
-        } else {
-            cerr << "Failed to create shared folder" << endl;
-            return 1;
-        }
-    }
-    return 0;
 }
 
 bool check_invalid_username(string username){
@@ -348,7 +301,6 @@ void command_pwd(vector<string>& dir) {
 
 void command_mkfile(const std::string& username, const std::string& filename, const std::string& contents)
 {
-//    check_user_folders(username);
     // TODO Encryption
     // TODO Check if file of same name already exists
     std::string full_path = "filesystem/" + username + "/personal/" + filename;
@@ -362,36 +314,29 @@ void command_mkfile(const std::string& username, const std::string& filename, co
         RSA *public_key = read_RSAkey("public", public_key_path);
 
         encrypt = (char*)malloc(RSA_size(public_key));
-        cout << "strlen(message) " << strlen(message);
         int encrypt_length = public_encrypt(strlen(message) + 1, (unsigned char*)message, (unsigned char*)encrypt, public_key, RSA_PKCS1_OAEP_PADDING);
-        cout << "encrypt_length" << encrypt_length;
         if(encrypt_length == -1) {
             cout << "An error occurred in public_encrypt() method" << endl;
             return;
         }
 
-        cout << "strlen(encrypt) " << strlen(encrypt);
-//        outfile << encrypt;
-//        outfile.close();
         create_encrypted_file(full_path, encrypt, public_key);
     }
 
 
 std::string command_cat(const std::string& username, const std::string& filename, const std::string& key_name)
 {
-//    check_user_folders(username);
     // TODO Encryption
     std::string full_path = "filesystem/" + username + "/personal/" + filename;
     std::ifstream infile(full_path);
 
     if (!(infile && infile.is_open())) {
-        cout << "errorrr" << endl;
+        cout << "Unable to open the file, please check file name" << endl;
         return "";
     }
 
     infile.seekg(0, std::ios::end);
     size_t length = infile.tellg();
-    cout << "length " << length;
     infile.seekg(0, std::ios::beg);
 
     string public_key_path = "./publickeys/" + username + "_publickey";
@@ -401,9 +346,6 @@ std::string command_cat(const std::string& username, const std::string& filename
     infile.read(contentss, length);
     infile.close();
 
-    cout << endl << "contentss " << contentss << endl;
-    cout << endl << "strlen contentss " << strlen(contentss) << endl;
-
     char *decrypt = nullptr;
 
     std::string private_key_path;
@@ -412,8 +354,6 @@ std::string command_cat(const std::string& username, const std::string& filename
 
     private_key = read_RSAkey("private", private_key_path);
 
-    cout << endl << "strlen RSA_size " << RSA_size(private_key) << endl;
-//        decrypt = (char*)malloc(strlen(contents.c_str()));
     decrypt = (char*)malloc(RSA_size(public_key));
 
     int decrypt_length = private_decrypt(RSA_size(private_key), (unsigned char*)contentss, (unsigned char*)decrypt, private_key, RSA_PKCS1_OAEP_PADDING);
@@ -529,7 +469,6 @@ int main(int argc, char** argv) {
         // 7. mkfile
         else if (splits[0] == "mkfile")
         {
-            cout << "here";
             command_mkfile(username, splits[1], splits[2]);
         }
 

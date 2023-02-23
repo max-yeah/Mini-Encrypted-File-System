@@ -128,6 +128,14 @@ void create_encrypted_file(string filename, char* encrypted_content, RSA* key_pa
     fclose(encrypted_file);
 }
 
+// Write encrypted content into a file stored locally
+void read_encrypted_file(string filename, char* encrypted_content, RSA* key_pair) {
+    // filename += ".bin";
+    FILE* encrypted_file = fopen(&filename[0], "r");
+    fread(encrypted_content, sizeof(*encrypted_content), RSA_size(key_pair), encrypted_file);
+    fclose(encrypted_file);
+}
+
 int initial_folder_setup(){
     //create "filesystem", "privatekeys","publickeys" folders
         int status1 = mkdir("filesystem", 0777);
@@ -198,8 +206,7 @@ int login_authentication(string key_name){
             // cout << "An error occurred in public_encrypt() method" << endl;
             return 1;
         }
-
-        cout << "encrypt " << encrypt;
+        cout << "initial strlen(encrypt) " << strlen(encrypt);
         
         // Try to do RSA decryption using corresponding private key
         decrypt = (char *)malloc(encrypt_length);
@@ -345,60 +352,18 @@ void command_mkfile(const std::string& username, const std::string& filename, co
     // TODO Encryption
     // TODO Check if file of same name already exists
     std::string full_path = "filesystem/" + username + "/personal/" + filename;
-    std::ofstream outfile(full_path);
-    if (outfile && outfile.is_open())
-    {
-//        char message[] = "My secret";
-////        char *message = new char[contents.length() + 1];
-////        strcpy(message, contents.c_str());
-//
-//        char *encrypt = nullptr;
-//        string public_key_path = "./publickeys/" + username + "_publickey";
-//        RSA *public_key = read_RSAkey("public", public_key_path);
-//        encrypt = (char*)malloc(RSA_size(public_key));
-//        int encrypt_length = public_encrypt(strlen(message) + 1, (unsigned char*)message, (unsigned char*)encrypt, public_key, RSA_PKCS1_OAEP_PADDING);
-//        cout << "encrypt_length" << encrypt_length;
-//        if(encrypt_length == -1) {
-//            cout << "An error occurred in public_encrypt() method" << endl;
-//            return;
-//        }
-//
-//        // -----------------------
-//
-//        char *decrypt = nullptr;
-//
-//        std::string private_key_path;
-//        RSA *private_key;
-//        private_key_path = "./filesystem/" + username + "/" + "rob_79035964" + "_privatekey";
-//
-//        private_key = read_RSAkey("private", private_key_path);
-//
-////        decrypt = (char*)malloc(strlen(contents.c_str()));
-//        decrypt = (char*)malloc(encrypt_length);
-//
-//        cout << endl << "strlen(encrypt) " << strlen(encrypt) << endl;
-//
-//        int decrypt_length = private_decrypt(256, (unsigned char*)encrypt, (unsigned char*)decrypt, private_key, RSA_PKCS1_OAEP_PADDING);
-//        if(decrypt_length == -1) {
-//            cout << "An error occurred in private_decrypt() method" << endl;
-//            return;
-//        }
-//
-//        cout << "decrypt " << decrypt;
-//
-//        // -------------------------------------------------
-//
-//        outfile << encrypt;
-//        outfile.close();
 
         char message[] = "My secret";
 //        char *message = new char[contents.length() + 1];
 //        strcpy(message, contents.c_str());
 
-        char *encrypt = nullptr;
+        char *encrypt;
+
         string public_key_path = "./publickeys/" + username + "_publickey";
         RSA *public_key = read_RSAkey("public", public_key_path);
+
         encrypt = (char*)malloc(RSA_size(public_key));
+        cout << "strlen(message) " << strlen(message);
         int encrypt_length = public_encrypt(strlen(message) + 1, (unsigned char*)message, (unsigned char*)encrypt, public_key, RSA_PKCS1_OAEP_PADDING);
         cout << "encrypt_length" << encrypt_length;
         if(encrypt_length == -1) {
@@ -406,8 +371,11 @@ void command_mkfile(const std::string& username, const std::string& filename, co
             return;
         }
 
-        outfile << encrypt;
-        outfile.close();
+        cout << "strlen(encrypt) " << strlen(encrypt);
+//        outfile << encrypt;
+//        outfile.close();
+        create_encrypted_file(full_path, encrypt, public_key);
+
 
         // -----------------------
 
@@ -423,7 +391,7 @@ void command_mkfile(const std::string& username, const std::string& filename, co
         cout << "length " << length;
         infile.seekg(0, std::ios::beg);
 
-        char *contentss = (char*)malloc(encrypt_length);;
+        char *contentss = (char*)malloc(RSA_size(public_key));;
         infile.read(contentss, length);
         infile.close();
 
@@ -443,7 +411,7 @@ void command_mkfile(const std::string& username, const std::string& filename, co
 
         cout << endl << "strlen RSA_size " << RSA_size(private_key) << endl;
 //        decrypt = (char*)malloc(strlen(contents.c_str()));
-        decrypt = (char*)malloc(encrypt_length);
+        decrypt = (char*)malloc(RSA_size(public_key));
 
         cout << endl << "strlen(encrypt) " << strlen(encrypt) << endl;
 
@@ -455,7 +423,7 @@ void command_mkfile(const std::string& username, const std::string& filename, co
 
         cout << "decrypt " << decrypt;
     }
-}
+
 
 std::string command_cat(const std::string& username, const std::string& filename, const std::string& key_name)
 {

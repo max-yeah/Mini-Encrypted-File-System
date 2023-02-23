@@ -342,7 +342,7 @@ bool is_admin(string username) {
     return false;
 }
 
-void command_sharefile(string username, string user_command) {
+void command_sharefile(string username, string key_name, vector<string>& dir, string user_command) {
     // check who is the username
     if (is_admin(username) == true) {
         cout << "You are not allowed to share." << endl;
@@ -376,8 +376,13 @@ void command_sharefile(string username, string user_command) {
 
     // TODO: use encrypted name instead of filename
     // check file exists by reading it
-    string filepath = filesystem::current_path().string() + "/" + filename;
-    // cout << "FUll PATH: " << filepath << endl;
+    string current_dir;
+    for (string str:dir) {
+        current_dir += "/" + str;
+    }
+    //string filepath = filesystem::current_path().string() + "/" + filename;
+    string filepath = "./filesystem/" + username + current_dir + "/" + filename;
+    //cout << "FUll PATH: " << filepath << endl;
     
     // FILE  *fp  = NULL;
     // fp = fopen(&filepath[0], "rb");
@@ -391,7 +396,7 @@ void command_sharefile(string username, string user_command) {
     ifstream ifs;
     ifs.open(filepath);
     if (!(ifs && ifs.is_open())) {
-        cout << "Invalid filename command. File does not exist: " << endl;
+        cout << "Invalid filename command. " << filepath << " does not exist: " << endl;
         return;
     }
     ifs.seekg(0, ios::end);
@@ -418,19 +423,29 @@ void command_sharefile(string username, string user_command) {
     }
 
     // check that target username exists (a valid user have a public key)
-    RSA * target_public_key;
+    RSA *target_public_key;
+    RSA *private_key;
     target_public_key = read_RSAkey("public", "./publickeys/" + target_username + "_publickey");
 
     if (target_public_key == NULL){
-        //not such key by searching the provided key_name
         cout << "Invalid username is provided. User does not exits." << endl;
         return;
     }
 
+    private_key = read_RSAkey("private", "./filesystem/" + username + "/" + key_name + "_privatekey");
+
     // decrypt file for copying
-    char* descrypted_file_content = new char[full_size];
+    char *decrypted_file_content = new char[full_size];
+    int decrypt_length = private_decrypt(full_size, (unsigned char*)file_content, (unsigned char*)decrypted_file_content, private_key, RSA_PKCS1_OAEP_PADDING);
+    if (decrypt_length == -1) {
+        cout << "An error occurred during file share" << endl;
+        return;
+    }
+    // cout << "decrypted_file_content:" << endl;
+    // cout << decrypted_file_content << endl;
 
     // encrypt shared file with target's public key
+    //char *share_encrypted_content = (char*)malloc();
 
     // if exists, overwrite
 
@@ -537,7 +552,7 @@ int main(int argc, char** argv) {
         // 6. share 
         //
         else if (user_command.rfind("share", 0) == 0) {
-            command_sharefile(username, user_command);
+            command_sharefile(username, key_name, dir, user_command);
         }
 
         // 7. mkfile 

@@ -16,9 +16,10 @@
 #include <iomanip>
 #include <openssl/sha.h>
 #include <jsoncpp/json/json.h>
-
+#include <sys/types.h>
 
 using namespace std;
+
 
 // This function will create public/private key pairs under /publickeys folder and /privatekeys folder
 // keyfile's naming convension: username_randomnumber_publickey and username_randomnumber_privatekey
@@ -668,6 +669,24 @@ void write_to_metadata(string sha, string name) {
     Json::StreamWriterBuilder writerBuilder;
     unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
     writer->write(metadata, &ofs);
+void command_mkdir(string new_dir, string username) {
+    // string dirpath = filesystem::curent_path().string() + "/" + new_dir;
+    char* dirname = strdup(new_dir.c_str());
+    if(username != "Admin"){
+        if (mkdir(dirname, 0777) == -1)
+            cerr << "Error: " << strerror(errno) << endl;
+        else
+            cout << "Directory created";  
+    }
+    else{
+        cout << "Invalid command!" << endl;
+    }
+}
+
+
+void command_ls(vector<string>&dir){
+    for (const auto & entry : filesystem::directory_iterator(dir))
+        std::cout << entry.path() << std::endl;
 }
 
 int main(int argc, char** argv) {
@@ -747,15 +766,15 @@ int main(int argc, char** argv) {
 
         // 3. ls  
         //
-        // else if (user_command ....) {
-
-        // }
+        else if (user_command == "ls") {
+            command_ls(dir);
+        }
 
         // 4. mkdir  
         //
-        // else if (user_command ....) {
-
-        // }
+        else if (user_command.substr(0,5) == "mkdir" && user_command.substr(5,1) == " ") {
+            command_mkdir(user_command.substr(6), username);
+        }
 
         /* File commands section*/
 

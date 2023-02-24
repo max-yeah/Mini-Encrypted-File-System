@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <sstream>
 #include <filesystem>
+#include <regex>
 #include <fstream>
 #include <iomanip>
 #include <openssl/sha.h>
@@ -489,6 +490,148 @@ void command_cd(vector<string>& dir, string change_dir, string username) {
     return;
 }
 
+bool is_admin(string username) {
+    if (strcasecmp(username.c_str(), "admin") == 0) {
+        return true;
+    }
+    return false;
+}
+
+void command_sharefile(string username, string key_name, vector<string>& dir, string user_command) {
+    // check who is the username
+    if (is_admin(username) == true) {
+        cout << "You are not allowed to share." << endl;
+        return;
+    }
+
+    // group 1 must always be 'share', group 4 if using quotes or group 6 without quotes, group 7 is the user
+    // regex rgx("^([A-Za-z0-9]+)\\s+((\"|')?([A-Za-z0-9\\s.]+)(\\3)|([A-Za-z0-9.]+))\\s+([a-z0-9]+)");
+    regex rgx("^share\\s+((\"|')?([A-Za-z0-9\\-_\\s.]+)(\\3)|([A-Za-z0-9\\-_.]+))\\s+([a-z0-9_]+)");
+    
+    smatch matches;
+
+    string filename, target_username, match_string;
+    if (regex_search(user_command, matches, rgx)) {
+        for (size_t i = 0; i < matches.size(); ++i) {
+            match_string = matches[i].str();
+            if ((i == 3 || i == 5) && match_string.length() > 0) {
+                // cout << "filename" << ": '" << match_string << "'" << endl;
+                filename = match_string;
+            }
+            if (i == 6) {
+                // cout << "username" << ": '" << match_string << "'" << endl;
+                target_username = match_string;
+            }
+        }
+    } else {
+        cout << "Invalid share command. You should use command: " << endl;
+        cout << "share <filename> username" << endl;
+        return;
+    }
+
+    // TODO: use encrypted name instead of filename
+    // check file exists by reading it
+    string current_dir;
+    for (string str:dir) {
+        current_dir += "/" + str;
+    }
+    //string filepath = filesystem::current_path().string() + "/" + filename;
+    string filepath = "./filesystem/" + username + current_dir + "/" + filename;
+    //cout << "FUll PATH: " << filepath << endl;
+    
+    // FILE  *fp  = NULL;
+    // fp = fopen(&filepath[0], "rb");
+    // if (fp == NULL) {
+    //     cout << "Invalid filename command. File does not exist: " << endl;
+    //     return;
+    // }
+    // // prepare file content for decryption before closing fp
+    // fclose(fp);
+
+    ifstream ifs;
+    ifs.open(filepath);
+    if (!(ifs && ifs.is_open())) {
+        cout << "Invalid filename command. " << filepath << " does not exist: " << endl;
+        return;
+    }
+    ifs.seekg(0, ios::end);
+    size_t full_size = ifs.tellg();
+    // cout << "full size:" << full_size;
+    // rewind to allow reading
+    ifs.seekg(0, ios::beg);
+
+    // create file content buffer
+    char* file_content = new char[full_size];
+    ifs.read(file_content, full_size);
+    ifs.close();
+
+    // debug to see contents in hex
+    // cout << file_content << endl;
+    // for(int i = 0; i<full_size; ++i) {
+    //     cout << hex << (int) file_content[i];
+    // }
+
+    // check that the user cannot share to themselves
+    if (target_username == username) {
+        cout << "You cannot share files to yourself." << endl;
+        return;
+    }
+
+    // check that target username exists (a valid user have a public key)
+    RSA *target_public_key;
+    RSA *private_key;
+    target_public_key = read_RSAkey("public", "./publickeys/" + target_username + "_publickey");
+
+    if (target_public_key == NULL){
+        cout << "Invalid username is provided. User does not exits." << endl;
+        return;
+    }
+
+    private_key = read_RSAkey("private", "./filesystem/" + username + "/" + key_name + "_privatekey");
+
+    // decrypt file for copying
+    char *decrypted_file_content = new char[full_size];
+    int decrypt_length = private_decrypt(full_size, (unsigned char*)file_content, (unsigned char*)decrypted_file_content, private_key, RSA_PKCS1_OAEP_PADDING);
+    if (decrypt_length == -1) {
+        cout << "An error occurred during file share" << endl;
+        return;
+    }
+    // cout << "decrypted_file_content:" << endl;
+    // cout << decrypted_file_content << endl;
+
+    // encrypt shared file with target's public key
+    char *share_encrypted_content = (char*)malloc(RSA_size(target_public_key));
+    int share_encrypt_length = public_encrypt(strlen(decrypted_file_content) + 1, (unsigned char*)decrypted_file_content, (unsigned char*)share_encrypted_content, target_public_key, RSA_PKCS1_OAEP_PADDING);
+    if (share_encrypt_length == -1) {
+        cout << "An error occurred during file share" << endl;
+        return;
+    }
+
+    // directory exists?
+    string target_share_directory = "./filesystem/" + target_username + "/shared/" + username;
+    cout << "Target directory:" << target_share_directory << endl;
+    if (!filesystem::is_directory(filesystem::status(target_share_directory))) {
+        int dir_create_status = mkdir(&target_share_directory[0], 0777);
+        if (dir_create_status != 0) {
+            cout << "An error occurred during file share" << endl;
+            return;
+        }
+    }
+
+    // now write new file
+    string target_filepath = target_share_directory + "/" + filename;
+    FILE * fp;
+    fp = fopen(target_filepath.c_str(),"w");
+    if (fp == NULL) {
+        cout << "An error occurred during file share" << endl;
+        return;
+    }
+    fputs(share_encrypted_content, fp);
+    fclose(fp);
+    cout << "File '" << filename << "' has been successfully shared with user '" << target_username << "'" << endl;
+}
+
+
 // Give it a file or directory name, return the SHA-256 hash value
 string name_to_sha256(string name) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
@@ -623,6 +766,11 @@ int main(int argc, char** argv) {
 
         /* File commands section*/
 
+        // 6. share 
+        //
+        else if (user_command.rfind("share", 0) == 0) {
+            command_sharefile(username, key_name, dir, user_command);
+        }
         // 5. cat
         else if (splits[0] == "cat")
         {

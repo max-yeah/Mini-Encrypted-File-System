@@ -588,13 +588,21 @@ int main(int argc, char** argv) {
 
             if (curr_dir.empty() || curr_dir == "shared/")
             {
-                cout << "Forbidden";
+                cout << "Forbidden" << endl;
                 continue;
             }
 
             if (splits.size() < 3 || splits[2].empty())
             {
-                cout << "File cannot be empty";
+                cout << "File cannot be empty" << endl;
+                continue;
+            }
+
+            cout << strlen(splits[2].c_str()) << endl;
+
+            if (strlen(splits[2].c_str()) > 213)
+            {
+                cout << "Max file content allowed is 213 characters" << endl;
                 continue;
             }
 

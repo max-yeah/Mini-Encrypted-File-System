@@ -669,25 +669,59 @@ void write_to_metadata(string sha, string name) {
     Json::StreamWriterBuilder writerBuilder;
     unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
     writer->write(metadata, &ofs);
-void command_mkdir(string new_dir, string username) {
-    // string dirpath = filesystem::curent_path().string() + "/" + new_dir;
+
+void command_mkdir(vector<string>& dir, string new_dir, string username) {
     char* dirname = strdup(new_dir.c_str());
     if(username != "Admin"){
-        if (mkdir(dirname, 0777) == -1)
-            cerr << "Error: " << strerror(errno) << endl;
-        else
-            cout << "Directory created";  
+        if (!dir.empty()){
+            if (mkdir(dirname, 0777) == -1)
+                cerr << "Error: " << strerror(errno) << endl;
+            else
+                cout << "Directory created"; 
+        }
+        else{
+            cout << "Please create content in your /personal or /shared directory" << endl;
+        }
+ 
     }
     else{
-        cout << "Invalid command!" << endl;
+        cout << "Invalid command for admin!" << endl;
     }
 }
 
 
-void command_ls(vector<string>&dir){
-    for (const auto & entry : filesystem::directory_iterator(dir))
-        std::cout << entry.path() << std::endl;
+void command_ls(vector<string>&dir, string username){
+    // construct current directory string
+    string cur_dir;
+    if (username == "Admin"){
+        cur_dir = std::filesystem::current_path().string() + "/filesystem/";
+    }
+    else{
+        cur_dir = std::filesystem::current_path().string() + "/filesystem/" + username + '/';
+    }
+    for (string str : dir) {
+        if (!str.empty()) {
+            cur_dir = cur_dir + "/" + str;
+        }
+    }
+
+    //iterate directory
+    const std::filesystem::path path = std::filesystem::u8path(cur_dir); // sanity check for encoding
+    for (const auto & entry : filesystem::directory_iterator(path)){
+        string full_path = entry.path();
+        string display_path = full_path.substr(cur_dir.length());
+        std::cout << display_path << endl;
+    }
 }
+
+bool isWhitespace(std::string s){
+    for(int index = 0; index < s.length(); index++){
+        if(!std::isspace(s[index]))
+            return false;
+    }
+    return true;
+}
+
 
 int main(int argc, char** argv) {
 
@@ -763,17 +797,16 @@ int main(int argc, char** argv) {
         else if (user_command.substr(0, 2) == "cd" && user_command.substr(2, 1) == " ") {
             command_cd(dir, user_command.substr(3), username);
         }
-
         // 3. ls  
         //
         else if (user_command == "ls") {
-            command_ls(dir);
+            command_ls(dir, username);
         }
 
         // 4. mkdir  
         //
-        else if (user_command.substr(0,5) == "mkdir" && user_command.substr(5,1) == " ") {
-            command_mkdir(user_command.substr(6), username);
+        else if (user_command.substr(0,5) == "mkdir" && user_command.substr(5,1) == " " && !isWhitespace(user_command.substr(6)) ) {
+            command_mkdir(dir, user_command.substr(6), username);
         }
 
         /* File commands section*/

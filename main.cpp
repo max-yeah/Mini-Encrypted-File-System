@@ -98,7 +98,7 @@ RSA * read_RSAkey(string key_type, string key_path){
 
     fp = fopen(&key_path[0], "rb");
     if (fp == NULL){
-        cout << "invalid key_name provided";
+        //invalid key_name provided
         return rsa;
     }
 

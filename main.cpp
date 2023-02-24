@@ -642,7 +642,7 @@ int main(int argc, char** argv) {
                 continue;
             }
 
-            if (curr_dir.empty() || curr_dir.find("shared/") != std::string::npos)
+            if (curr_dir.empty() || curr_dir.rfind("shared", 0) == 0)
             {
                 cout << "Forbidden" << endl;
                 continue;

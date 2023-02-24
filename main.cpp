@@ -335,6 +335,17 @@ void command_mkfile(const std::string& username, const std::string& filename, co
 std::string command_cat(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& key_name)
 {
     std::string full_path = "filesystem/" + username + "/" + curr_dir + filename;
+
+    struct stat s;
+    if(stat(full_path.c_str(), &s) == 0)
+    {
+        if(s.st_mode & S_IFDIR)
+        {
+            cout << "Cannot open a directory, please enter a file name" << endl;
+            return "";
+        }
+    }
+
     std::ifstream infile(full_path);
 
     if (!(infile && infile.is_open())) {
@@ -374,6 +385,17 @@ std::string command_cat(const std::string& username, const std::string& filename
 std::string command_cat_admin(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& key_name)
 {
     std::string full_path = "filesystem/" + curr_dir + filename;
+
+    struct stat s;
+    if(stat(full_path.c_str(), &s) == 0 )
+    {
+        if( s.st_mode & S_IFDIR )
+        {
+            cout << "Cannot open a directory, please enter a file name" << endl;
+            return "";
+        }
+    }
+
     std::ifstream infile(full_path);
 
     if (!(infile && infile.is_open())) {

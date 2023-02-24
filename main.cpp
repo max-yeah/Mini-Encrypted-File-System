@@ -360,6 +360,45 @@ std::string command_cat(const std::string& username, const std::string& filename
     return decrypt;
 }
 
+std::string command_cat_admin(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& key_name)
+{
+    std::string full_path = "filesystem/" + curr_dir + filename;
+    std::ifstream infile(full_path);
+
+    if (!(infile && infile.is_open())) {
+        cout << "Unable to open the file, please check file name" << endl;
+        return "";
+    }
+
+    infile.seekg(0, std::ios::end);
+    size_t length = infile.tellg();
+    infile.seekg(0, std::ios::beg);
+
+    string public_key_path = "./publickeys/" + username + "_publickey";
+    RSA *public_key = read_RSAkey("public", public_key_path);
+
+    char *contentss = (char*)malloc(RSA_size(public_key));;
+    infile.read(contentss, length);
+    infile.close();
+
+    char *decrypt;
+
+    std::string private_key_path;
+    RSA *private_key;
+    private_key_path = "./privatekeys/" + username;
+
+    private_key = read_RSAkey("private", private_key_path);
+
+    decrypt = (char*)malloc(RSA_size(public_key));
+
+    int decrypt_length = private_decrypt(RSA_size(private_key), (unsigned char*)contentss, (unsigned char*)decrypt, private_key, RSA_PKCS1_OAEP_PADDING);
+    if(decrypt_length == -1) {
+        cout << "An error occurred in private_decrypt() method" << endl;
+    }
+
+    return decrypt;
+}
+
 void command_cd(vector<string>& dir, string change_dir, string username) {
     stringstream test(change_dir);
     string segment;
@@ -515,8 +554,16 @@ int main(int argc, char** argv) {
                 curr_dir.append("/");
             }
 
-            std::string contents = command_cat(username, splits[1], curr_dir, key_name);
-            std::cout << contents;
+            if (username == "Admin")
+            {
+                std::string contents = command_cat_admin(dir[0], splits[1], curr_dir, key_name);
+                std::cout << contents;
+            }
+            else
+            {
+                std::string contents = command_cat(username, splits[1], curr_dir, key_name);
+                std::cout << contents;
+            }
         }
 
         // 6. share

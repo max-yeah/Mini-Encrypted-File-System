@@ -11,6 +11,10 @@
 #include <sstream>
 #include <filesystem>
 #include <regex>
+#include <fstream>
+#include <iomanip>
+#include <openssl/sha.h>
+#include <jsoncpp/json/json.h>
 
 
 using namespace std;
@@ -132,17 +136,24 @@ void create_encrypted_file(string filename, char* encrypted_content, RSA* key_pa
 
 int initial_folder_setup(){
     //create "filesystem", "privatekeys","publickeys" folders
-        int status1 = mkdir("filesystem", 0777);
-        int status2 = mkdir("privatekeys", 0777);
-        int status3 = mkdir("publickeys", 0777);
+    int status1 = mkdir("filesystem", 0777);
+    int status2 = mkdir("privatekeys", 0777);
+    int status3 = mkdir("publickeys", 0777);
 
-        if (status1 == 0 && status2 == 0 && status3 == 0){
-            cout << "Filesystem created successfully" << endl << endl;
-            return 0;
-        } else {
-            cerr << "Failed to create filesystem. Please check permission and try again " << endl;
-            return 1;
-        }
+    if (status1 == 0 && status2 == 0 && status3 == 0){
+        cout << "Filesystem created successfully" << endl << endl;
+    } else {
+        cerr << "Failed to create filesystem. Please check permission and try again " << endl;
+        return 1;
+    }
+
+    // Create an empty json file metadata.json
+    Json::Value metadata;
+    ofstream ofs("./metadata.json");
+    Json::StreamWriterBuilder writerBuilder;
+    unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
+    writer->write(metadata, &ofs);
+    return 0;
 }
 
 void initial_adminkey_setup(){
@@ -477,6 +488,50 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
 }
 
 
+// Give it a file or directory name, return the SHA-256 hash value
+string name_to_sha256(string name) {
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, name.c_str(), name.size());
+    SHA256_Final(hash, &sha256);
+    stringstream ss;
+    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+    {
+        ss << hex << setw(2) << setfill('0') << (int)hash[i];
+    }
+    return ss.str();
+}
+
+// Read metadata.json, use sha value as key to get back the file or directory name
+string sha256_to_name(string sha) {
+    ifstream ifs("metadata.json");
+    Json::Value metadata;
+    Json::CharReaderBuilder builder;
+    JSONCPP_STRING err;
+    Json::parseFromStream(builder, ifs, &metadata, &err);
+
+    string name = metadata[sha].asString();
+    return name;
+}
+
+// In mkfile and mkdir, we need to calculate the key: value pair and store it in metadata.json
+void write_to_metadata(string sha, string name) {
+    ifstream ifs("metadata.json");
+    Json::Value metadata;
+    Json::CharReaderBuilder builder;
+    JSONCPP_STRING err;
+    Json::parseFromStream(builder, ifs, &metadata, &err);
+    
+    // Add a new key-value pair to the Json::Value object
+    metadata[sha] = name;
+
+    // Write the modified Json::Value object back to the JSON file
+    ofstream ofs("metadata.json");
+    Json::StreamWriterBuilder writerBuilder;
+    unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
+    writer->write(metadata, &ofs);
+}
 
 int main(int argc, char** argv) {
 
@@ -588,6 +643,10 @@ int main(int argc, char** argv) {
         // 8. adduser <username>
         // check if user_command start with adduser
         else if (user_command.rfind("adduser", 0) == 0) {
+            if (username != "Admin"){
+                cout << "Forbidden. Only Admin can perform adduser command." << endl;
+                continue; 
+            }
             size_t pos = user_command.find(" ");
             if (pos == -1) {
                 // to counter malicious input: adduser

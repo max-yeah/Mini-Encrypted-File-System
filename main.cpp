@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <string.h>
 #include <vector>
+#include <algorithm>
 #include <sstream>
 #include <filesystem>
 #include <regex>
@@ -129,7 +130,12 @@ int private_decrypt(int flen, unsigned char* from, unsigned char* to, RSA* key, 
 // Write encrypted content into a file stored locally
 void create_encrypted_file(string filename, char* encrypted_content, RSA* key_pair) {
     // filename += ".bin";
-    FILE* encrypted_file = fopen(&filename[0], "w");
+    FILE* encrypted_file = fopen(&filename[0], "wb");
+    if (encrypted_file == nullptr)
+    {
+        cout << "Unable to create file, please check directory permissions" << endl;
+        return;
+    }
     fwrite(encrypted_content, sizeof(*encrypted_content), RSA_size(key_pair), encrypted_file);
     fclose(encrypted_file);
 }
@@ -229,6 +235,21 @@ int login_authentication(string key_name){
     }
 }
 
+vector<string> split_string(const std::string& ipstr, const std::string& delimiter)
+{
+    size_t pos;
+    std::string token;
+    std::string ipstrcpy = ipstr;
+    vector<string> splits;
+    while ((pos = ipstrcpy.find(delimiter)) != std::string::npos) {
+        token = ipstrcpy.substr(0, pos);
+        splits.push_back(token);
+        ipstrcpy.erase(0, pos + delimiter.length());
+    }
+    splits.push_back(ipstrcpy);
+    return splits;
+}
+
 bool check_invalid_username(string username){
     for(int i=0;i<username.length();i++){
         if(!std::isalpha(username[i]) && !std::isdigit(username[i])) {return false;}
@@ -287,6 +308,129 @@ void command_pwd(vector<string>& dir) {
     }
     cout << endl;
     return;
+}
+
+void command_mkfile(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& contents)
+{
+    std::string full_path = "filesystem/" + username + "/" + curr_dir + filename;
+
+    char *message = new char[contents.length() + 1];
+    strcpy(message, contents.c_str());
+
+    char *encrypt;
+
+    string public_key_path = "./publickeys/" + username + "_publickey";
+    RSA *public_key = read_RSAkey("public", public_key_path);
+
+    encrypt = (char*)malloc(RSA_size(public_key));
+    int encrypt_length = public_encrypt(strlen(message) + 1, (unsigned char*)message, (unsigned char*)encrypt, public_key, RSA_PKCS1_OAEP_PADDING);
+    if(encrypt_length == -1) {
+        cout << "An error occurred in public_encrypt() method" << endl;
+        return;
+    }
+
+    create_encrypted_file(full_path, encrypt, public_key);
+}
+
+
+std::string command_cat(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& key_name)
+{
+    std::string full_path = "filesystem/" + username + "/" + curr_dir + filename;
+
+    struct stat s;
+    if(stat(full_path.c_str(), &s) == 0)
+    {
+        if(s.st_mode & S_IFDIR)
+        {
+            cout << "Cannot open a directory, please enter a file name" << endl;
+            return "";
+        }
+    }
+
+    std::ifstream infile(full_path);
+
+    if (!(infile && infile.is_open())) {
+        cout << "Unable to open the file, please check file name" << endl;
+        return "";
+    }
+
+    infile.seekg(0, std::ios::end);
+    size_t length = infile.tellg();
+    infile.seekg(0, std::ios::beg);
+
+    string public_key_path = "./publickeys/" + username + "_publickey";
+    RSA *public_key = read_RSAkey("public", public_key_path);
+
+    char *contentss = (char*)malloc(RSA_size(public_key));;
+    infile.read(contentss, length);
+    infile.close();
+
+    char *decrypt;
+
+    std::string private_key_path;
+    RSA *private_key;
+    private_key_path = "./filesystem/" + username + "/" + key_name + "_privatekey";
+
+    private_key = read_RSAkey("private", private_key_path);
+
+    decrypt = (char*)malloc(RSA_size(public_key));
+
+    int decrypt_length = private_decrypt(RSA_size(private_key), (unsigned char*)contentss, (unsigned char*)decrypt, private_key, RSA_PKCS1_OAEP_PADDING);
+    if(decrypt_length == -1) {
+        cout << "An error occurred in private_decrypt() method" << endl;
+    }
+
+    return decrypt;
+}
+
+std::string command_cat_admin(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& key_name)
+{
+    std::string full_path = "filesystem/" + curr_dir + filename;
+
+    struct stat s;
+    if(stat(full_path.c_str(), &s) == 0 )
+    {
+        if( s.st_mode & S_IFDIR )
+        {
+            cout << "Cannot open a directory, please enter a file name" << endl;
+            return "";
+        }
+    }
+
+    std::ifstream infile(full_path);
+
+    if (!(infile && infile.is_open())) {
+        cout << "Unable to open the file, please check file name" << endl;
+        return "";
+    }
+
+    infile.seekg(0, std::ios::end);
+    size_t length = infile.tellg();
+    infile.seekg(0, std::ios::beg);
+
+    string public_key_path = "./publickeys/" + username + "_publickey";
+    RSA *public_key = read_RSAkey("public", public_key_path);
+
+    char *contentss = (char*)malloc(RSA_size(public_key));;
+    infile.read(contentss, length);
+    infile.close();
+
+    char *decrypt;
+
+    std::string private_key_path;
+    RSA *private_key;
+    private_key_path = "./privatekeys/" + username;
+
+    private_key = read_RSAkey("private", private_key_path);
+
+    decrypt = (char*)malloc(RSA_size(public_key));
+
+    int decrypt_length = private_decrypt(RSA_size(private_key), (unsigned char*)contentss, (unsigned char*)decrypt, private_key, RSA_PKCS1_OAEP_PADDING);
+    if(decrypt_length == -1) {
+        cout << "An error occurred in private_decrypt() method" << endl;
+    }
+
+    return decrypt;
 }
 
 void command_cd(vector<string>& dir, string change_dir, string username) {
@@ -588,6 +732,7 @@ int main(int argc, char** argv) {
         cout << "> ";
         getline(cin,user_command);
         // cout << "User input: " << user_command << endl;
+        vector<string> splits = split_string(user_command, " ");
 
         if (user_command == "exit") {
             cout << "Fileserver closed. Goodbye " << username << " :)" << endl;
@@ -619,25 +764,74 @@ int main(int argc, char** argv) {
 
         // }
 
-
         /* File commands section*/
-        // 5. cat 
-        //
-        // else if (user_command ....) {
-            // command_cat(...);
-        // }
 
         // 6. share 
         //
         else if (user_command.rfind("share", 0) == 0) {
             command_sharefile(username, key_name, dir, user_command);
         }
+        // 5. cat
+        else if (splits[0] == "cat")
+        {
+            std::string curr_dir;
+            for (const string& str:dir) {
+                curr_dir.append(str);
+                curr_dir.append("/");
+            }
 
-        // 7. mkfile 
-        //
+            if (username == "Admin")
+            {
+                std::string contents = command_cat_admin(dir[0], splits[1], curr_dir, key_name);
+                std::cout << contents;
+            }
+            else
+            {
+                std::string contents = command_cat(username, splits[1], curr_dir, key_name);
+                std::cout << contents;
+            }
+        }
+
+        // 6. share
         // else if (user_command ....) {
 
         // }
+
+        // 7. mkfile
+        else if (splits[0] == "mkfile")
+        {
+            std::string curr_dir;
+            for (const string& str:dir) {
+                curr_dir.append(str);
+                curr_dir.append("/");
+            }
+
+            if (username == "Admin")
+            {
+                cout << "Sorry, admin cannot create files" << endl;
+                continue;
+            }
+
+            if (curr_dir.empty() || curr_dir.rfind("shared", 0) == 0)
+            {
+                cout << "Forbidden" << endl;
+                continue;
+            }
+
+            if (splits.size() < 3 || splits[2].empty())
+            {
+                cout << "File cannot be empty" << endl;
+                continue;
+            }
+
+            if (strlen(splits[2].c_str()) > 213)
+            {
+                cout << "Max file content allowed is 213 characters" << endl;
+                continue;
+            }
+
+            command_mkfile(username, splits[1], curr_dir, splits[2]);
+        }
 
         /* Admin specific feature */
         // 8. adduser <username>

@@ -586,7 +586,7 @@ int main(int argc, char** argv) {
                 continue;
             }
 
-            if (curr_dir.empty() || curr_dir == "shared/")
+            if (curr_dir.empty() || curr_dir.find("shared/") != std::string::npos)
             {
                 cout << "Forbidden" << endl;
                 continue;

@@ -394,7 +394,7 @@ std::string command_cat(const std::string& username, const std::string& filename
             return "";
         }
     }
-
+    cout << "full path:" << full_path << endl;
     std::ifstream infile(full_path);
 
     if (!(infile && infile.is_open())) {
@@ -581,26 +581,25 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
     // TODO: use encrypted name instead of filename
     // check file exists by reading it
     string current_dir;
-    for (string str:dir) {
-        current_dir += "/" + str;
+    for (int i = 0; i < dir.size(); i++) {
+        // cout << "i:" << i << endl;
+        // cout << current_dir.find("/shared") << endl;
+        string hashed_dir = name_to_sha256(dir[i]);
+        //if (i == 0 || current_dir.find("/shared") == 0) { // skip hashing of the upper directories
+        if (i == 0) {
+            current_dir += "/" + dir[i];
+            continue;
+        }
+        current_dir += "/" + hashed_dir;
     }
-    //string filepath = filesystem::current_path().string() + "/" + filename;
-    string filepath = "./filesystem/" + username + current_dir + "/" + filename;
-    //cout << "FUll PATH: " << filepath << endl;
-    
-    // FILE  *fp  = NULL;
-    // fp = fopen(&filepath[0], "rb");
-    // if (fp == NULL) {
-    //     cout << "Invalid filename command. File does not exist: " << endl;
-    //     return;
-    // }
-    // // prepare file content for decryption before closing fp
-    // fclose(fp);
+    string hashed_filename = name_to_sha256(filename);
+    string filepath = "./filesystem/" + username + current_dir + "/" + hashed_filename;
+    // cout << "FUll PATH: " << filepath << endl;
 
     ifstream ifs;
     ifs.open(filepath);
     if (!(ifs && ifs.is_open())) {
-        cout << "Invalid filename command. " << filepath << " does not exist: " << endl;
+        cout << "Invalid filename. '" << filename << "' does not exist." << endl;
         return;
     }
     ifs.seekg(0, ios::end);
@@ -657,8 +656,9 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
     }
 
     // directory exists?
-    string target_share_directory = "./filesystem/" + target_username + "/shared/" + username;
-    cout << "Target directory:" << target_share_directory << endl;
+    string hashed_username = name_to_sha256(username);
+    string target_share_directory = "./filesystem/" + target_username + "/shared/" + hashed_username;
+    // cout << "Target directory:" << target_share_directory << endl;
     if (!filesystem::is_directory(filesystem::status(target_share_directory))) {
         int dir_create_status = mkdir(&target_share_directory[0], 0777);
         if (dir_create_status != 0) {
@@ -668,7 +668,7 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
     }
 
     // now write new file
-    string target_filepath = target_share_directory + "/" + filename;
+    string target_filepath = target_share_directory + "/" + hashed_filename;
     create_encrypted_file(target_filepath, share_encrypted_content, target_public_key);
     cout << "File '" << filename << "' has been successfully shared with user '" << target_username << "'" << endl;
 }

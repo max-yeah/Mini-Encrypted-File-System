@@ -776,12 +776,12 @@ int main(int argc, char** argv) {
             if (username == "Admin")
             {
                 std::string contents = command_cat_admin(dir[0], splits[1], curr_dir, key_name);
-                std::cout << contents;
+                std::cout << contents << endl;
             }
             else
             {
                 std::string contents = command_cat(username, splits[1], curr_dir, key_name);
-                std::cout << contents;
+                std::cout << contents << endl;
             }
         }
 

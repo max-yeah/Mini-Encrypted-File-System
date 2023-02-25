@@ -620,14 +620,7 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
 
     // now write new file
     string target_filepath = target_share_directory + "/" + filename;
-    FILE * fp;
-    fp = fopen(target_filepath.c_str(),"w");
-    if (fp == NULL) {
-        cout << "An error occurred during file share" << endl;
-        return;
-    }
-    fputs(share_encrypted_content, fp);
-    fclose(fp);
+    create_encrypted_file(target_filepath, share_encrypted_content, target_public_key);
     cout << "File '" << filename << "' has been successfully shared with user '" << target_username << "'" << endl;
 }
 
@@ -783,12 +776,12 @@ int main(int argc, char** argv) {
             if (username == "Admin")
             {
                 std::string contents = command_cat_admin(dir[0], splits[1], curr_dir, key_name);
-                std::cout << contents;
+                std::cout << contents << endl;
             }
             else
             {
                 std::string contents = command_cat(username, splits[1], curr_dir, key_name);
-                std::cout << contents;
+                std::cout << contents << endl;
             }
         }
 

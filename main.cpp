@@ -434,7 +434,7 @@ std::string command_cat(const std::string& username, const std::string& filename
 std::string command_cat_admin(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& key_name)
 {
     string hashed_filename = name_to_sha256(filename);
-    std::string full_path = "filesystem/" + username + "/" + curr_dir + hashed_filename;
+    std::string full_path = "filesystem/" + curr_dir + hashed_filename;
 
     struct stat s;
     if(stat(full_path.c_str(), &s) == 0 )

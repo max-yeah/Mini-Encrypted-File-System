@@ -859,6 +859,18 @@ int main(int argc, char** argv) {
                 curr_dir_hashed.append("/");
             }
 
+            if (curr_dir.empty())
+            {
+                cout << "Forbidden" << endl;
+                continue;
+            }
+
+            if (splits[1].find("_publickey", 0) != std::string::npos || splits[1].find("_privatekey", 0) != std::string::npos)
+            {
+                std::cout << "Forbidden" << endl;
+                continue;
+            }
+
             if (username == "Admin")
             {
                 std::string contents = command_cat_admin(dir[0], splits[1], curr_dir_hashed, key_name);
@@ -897,6 +909,12 @@ int main(int argc, char** argv) {
             if (curr_dir.empty() || curr_dir.rfind("shared", 0) == 0)
             {
                 cout << "Forbidden" << endl;
+                continue;
+            }
+
+            if (splits[1].find("_publickey", 0) != std::string::npos || splits[1].find("_privatekey", 0) != std::string::npos)
+            {
+                std::cout << "Forbidden" << endl;
                 continue;
             }
 

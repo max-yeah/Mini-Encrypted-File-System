@@ -705,6 +705,7 @@ void command_mkdir(vector<string>& dir, string new_dir, string username) {
 void command_ls(vector<string>&dir, string username){
     // construct current directory string
     string cur_dir;
+    cout << "d -> ."<< endl;
     if (username == "Admin"){
         cur_dir = std::filesystem::current_path().string() + "/filesystem/";
     }
@@ -714,15 +715,23 @@ void command_ls(vector<string>&dir, string username){
     for (string str : dir) {
         if (!str.empty()) {
             cur_dir = cur_dir + "/" + str;
+            cout << "d -> .." << endl;
         }
     }
-
+    
     //iterate directory
     const std::filesystem::path path = std::filesystem::u8path(cur_dir); // sanity check for encoding
     for (const auto & entry : filesystem::directory_iterator(path)){
+        string prefix;
         string full_path = entry.path();
+        if (filesystem::is_directory(filesystem::status(full_path))){
+            prefix = "d -> ";
+        }
+        else{
+            prefix = "f -> ";
+        }
         string display_path = full_path.substr(cur_dir.length());
-        std::cout << display_path << endl;
+        std::cout << prefix + display_path << endl;
     }
 }
 

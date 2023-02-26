@@ -74,8 +74,16 @@ void create_RSA(string key_name) {
 
     if (username == "Admin") {
 
-        string publickey_path = "./publickeys/" + username + "_publickey";
-        string privatekey_path = key_name + "_privatekey";
+        string publickey_name = username + "_publickey";
+        string privatekey_name = key_name + "_privatekey";
+        string publickey_name_sha = name_to_sha256(publickey_name);
+        string privatekey_name_sha = name_to_sha256(privatekey_name);
+
+        string publickey_path = "./publickeys/" + publickey_name_sha;
+        string privatekey_path = privatekey_name_sha;
+
+        write_to_metadata(publickey_name_sha, publickey_name);
+        write_to_metadata(privatekey_name_sha, privatekey_name);
         
         RSA   *rsa = NULL;
         FILE  *fp  = NULL;
@@ -101,9 +109,19 @@ void create_RSA(string key_name) {
         fclose(fp1);
     } else {
         // normal user's public key & private key file creation
-        string publickey_path = "./publickeys/" + username + "_publickey";
-        string privatekey_path = "filesystem/" + name_to_sha256(username) + "/" + key_name + "_privatekey";
-        string privatekey_foradmin_path = "./privatekeys/" + username ;
+        string publickey_name = username + "_publickey";
+        string privatekey_name = key_name + "_privatekey";
+
+        string publickey_name_sha = name_to_sha256(publickey_name);
+        string privatekey_name_sha = name_to_sha256(privatekey_name);
+
+        write_to_metadata(publickey_name_sha, publickey_name);
+        write_to_metadata(privatekey_name_sha, privatekey_name);
+
+
+        string publickey_path = "./publickeys/" + name_to_sha256(publickey_name);
+        string privatekey_path = "filesystem/" + name_to_sha256(username) + "/" + name_to_sha256(privatekey_name);
+        string privatekey_foradmin_path = "./privatekeys/" + name_to_sha256(username) ;
         
         RSA   *rsa = NULL;
         FILE  *fp  = NULL;
@@ -232,14 +250,17 @@ int login_authentication(string key_name){
 
     size_t pos = key_name.find("_");
     username = key_name.substr(0,pos);
+
+    string publickey_name = username + "_publickey";
+    string privatekey_name = key_name + "_privatekey";
     
-    public_key_path = "./publickeys/" + username + "_publickey";
+    public_key_path = "./publickeys/" + name_to_sha256(publickey_name);
     public_key = read_RSAkey("public", public_key_path);    
 
     if (username == "Admin"){
-        private_key_path = key_name + "_privatekey";
+        private_key_path = name_to_sha256(privatekey_name);
     } else {
-        private_key_path = "./filesystem/" + name_to_sha256(username) + "/" + key_name + "_privatekey";
+        private_key_path = "./filesystem/" + name_to_sha256(username) + "/" + name_to_sha256(privatekey_name);
     }
     private_key = read_RSAkey("private", private_key_path);
     

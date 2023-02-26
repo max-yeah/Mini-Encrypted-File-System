@@ -29,5 +29,6 @@ Tree-structure overview of the files and encrypted filesystem
 
 (The random numbers appear in private keys are made up for demonstration purpose)
 
-![CleanShot 2023-02-26 at 10 00 59](https://user-images.githubusercontent.com/26541990/221427977-c3cb4e62-7b02-49eb-9987-a6018b8955d3.png)
+![CleanShot 2023-02-26 at 10 05 12](https://user-images.githubusercontent.com/26541990/221428172-46d32f98-f0d5-498b-a119-b07e1ba3f388.png)
+
 

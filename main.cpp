@@ -660,7 +660,7 @@ void write_to_metadata(string sha, string name) {
     Json::CharReaderBuilder builder;
     JSONCPP_STRING err;
     Json::parseFromStream(builder, ifs, &metadata, &err);
-    
+
     // Add a new key-value pair to the Json::Value object
     metadata[sha] = name;
 
@@ -671,16 +671,17 @@ void write_to_metadata(string sha, string name) {
     writer->write(metadata, &ofs);
 }
 
+
 void command_mkdir(vector<string>& dir, string new_dir, string username) {
     string cur_dir;
     for (string str:dir) {
-            cur_dir = cur_dir + str + '/';
+            cur_dir = cur_dir + '/' + str;
         }
-    new_dir = std::filesystem::current_path().string() + "/filesystem/" + username + '/' + cur_dir + new_dir;
+    new_dir = std::filesystem::current_path().string() + "/filesystem/" + username + cur_dir + '/' + new_dir;
     char* dirname = strdup(new_dir.c_str());
     if(username != "Admin"){
         if (!dir.empty()){
-            if (cur_dir == "shared/")
+            if (cur_dir.substr(0,7) == "/shared")
             {
                 cout << "Forbidden" << endl;
             }

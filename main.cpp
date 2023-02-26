@@ -16,9 +16,10 @@
 #include <iomanip>
 #include <openssl/sha.h>
 #include <jsoncpp/json/json.h>
-
+#include <sys/types.h>
 
 using namespace std;
+
 
 // Give it a file or directory name, return the SHA-256 hash value
 string name_to_sha256(string name) {
@@ -672,6 +673,83 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
 }
 
 
+void command_mkdir(vector<string>& dir, string new_dir, string username) {
+    string cur_dir;
+    for (string str:dir) {
+            cur_dir = cur_dir + '/' + str;
+        }
+    new_dir = std::filesystem::current_path().string() + "/filesystem/" + username + cur_dir + '/' + new_dir;
+    char* dirname = strdup(new_dir.c_str());
+    if(username != "Admin"){
+        if (!dir.empty()){
+            if (cur_dir.substr(0,7) == "/shared")
+            {
+                cout << "Forbidden" << endl;
+            }
+            else{
+                if (mkdir(dirname, 0777) == -1)
+                    cerr << "Error: directory exists."<< endl;
+                else
+                    cout << "Directory created"; 
+            }           
+        }
+        else{
+            cout << "Forbidden" << endl;
+        }
+ 
+    }
+    else{
+        cout << "Invalid command for admin!" << endl;
+    }
+}
+
+
+void command_ls(vector<string>&dir, string username){
+    // construct current directory string
+    string cur_dir;
+    bool upper_dir = false;
+    cout << "d -> ."<< endl;
+    if (username == "Admin"){
+        cur_dir = std::filesystem::current_path().string() + "/filesystem/";
+    }
+    else{
+        cur_dir = std::filesystem::current_path().string() + "/filesystem/" + username;
+    }
+    for (string str : dir) {
+        if (!str.empty()) {
+            cur_dir = cur_dir + '/' + str;
+            upper_dir = true;
+        }
+    }
+    if (upper_dir){
+        cout << "d -> .." << endl;
+    }
+    
+    //iterate directory
+    const std::filesystem::path path = std::filesystem::u8path(cur_dir); // sanity check for encoding
+    for (const auto & entry : filesystem::directory_iterator(path)){
+        string prefix;
+        string full_path = entry.path();
+        if (filesystem::is_directory(filesystem::status(full_path))){
+            prefix = "d -> ";
+        }
+        else{
+            prefix = "f -> ";
+        }
+        string display_path = full_path.substr(cur_dir.length() + 1);
+        std::cout << prefix + display_path << endl;
+    }
+}
+
+bool isWhitespace(std::string s){
+    for(int index = 0; index < s.length(); index++){
+        if(!std::isspace(s[index]))
+            return false;
+    }
+    return true;
+}
+
+
 int main(int argc, char** argv) {
 
     string username, user_command, key_name;
@@ -749,18 +827,17 @@ int main(int argc, char** argv) {
         else if (user_command.substr(0, 2) == "cd" && user_command.substr(2, 1) == " ") {
             command_cd(dir, user_command.substr(3), username);
         }
-
         // 3. ls  
         //
-        // else if (user_command ....) {
-
-        // }
+        else if (user_command == "ls") {
+            command_ls(dir, username);
+        }
 
         // 4. mkdir  
         //
-        // else if (user_command ....) {
-
-        // }
+        else if (user_command.substr(0,5) == "mkdir" && user_command.substr(5,1) == " " && !isWhitespace(user_command.substr(6)) ) {
+            command_mkdir(dir, user_command.substr(6), username);
+        }
 
         /* File commands section*/
 

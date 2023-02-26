@@ -16,9 +16,55 @@
 #include <iomanip>
 #include <openssl/sha.h>
 #include <jsoncpp/json/json.h>
-
+#include <sys/types.h>
 
 using namespace std;
+
+
+// Give it a file or directory name, return the SHA-256 hash value
+string name_to_sha256(string name) {
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, name.c_str(), name.size());
+    SHA256_Final(hash, &sha256);
+    stringstream ss;
+    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+    {
+        ss << hex << setw(2) << setfill('0') << (int)hash[i];
+    }
+    return ss.str();
+}
+
+// Read metadata.json, use sha value as key to get back the file or directory name
+string sha256_to_name(string sha) {
+    ifstream ifs("metadata.json");
+    Json::Value metadata;
+    Json::CharReaderBuilder builder;
+    JSONCPP_STRING err;
+    Json::parseFromStream(builder, ifs, &metadata, &err);
+
+    string name = metadata[sha].asString();
+    return name;
+}
+
+// In mkfile and mkdir, we need to calculate the key: value pair and store it in metadata.json
+void write_to_metadata(string sha, string name) {
+    ifstream ifs("metadata.json");
+    Json::Value metadata;
+    Json::CharReaderBuilder builder;
+    JSONCPP_STRING err;
+    Json::parseFromStream(builder, ifs, &metadata, &err);
+    
+    // Add a new key-value pair to the Json::Value object
+    metadata[sha] = name;
+
+    // Write the modified Json::Value object back to the JSON file
+    ofstream ofs("metadata.json");
+    Json::StreamWriterBuilder writerBuilder;
+    unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
+    writer->write(metadata, &ofs);
+}
 
 // This function will create public/private key pairs under /publickeys folder and /privatekeys folder
 // keyfile's naming convension: username_randomnumber_publickey and username_randomnumber_privatekey
@@ -57,7 +103,7 @@ void create_RSA(string key_name) {
     } else {
         // normal user's public key & private key file creation
         string publickey_path = "./publickeys/" + username + "_publickey";
-        string privatekey_path = "filesystem/" + username + "/" + key_name + "_privatekey";
+        string privatekey_path = "filesystem/" + name_to_sha256(username) + "/" + key_name + "_privatekey";
         string privatekey_foradmin_path = "./privatekeys/" + username ;
         
         RSA   *rsa = NULL;
@@ -159,6 +205,7 @@ int initial_folder_setup(){
     Json::StreamWriterBuilder writerBuilder;
     unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
     writer->write(metadata, &ofs);
+
     return 0;
 }
 
@@ -258,9 +305,9 @@ bool check_invalid_username(string username){
 }
 
 int user_folder_setup(string new_username){
-    string root_folder_path = "filesystem/" + new_username;
-    string personal_folder_path = root_folder_path + "/personal";
-    string shared_folder_path = root_folder_path + "/shared";
+    string root_folder_path = "filesystem/" + name_to_sha256(new_username);
+    string personal_folder_path = root_folder_path + "/" + name_to_sha256("personal");
+    string shared_folder_path = root_folder_path + "/" + name_to_sha256("shared");
 
     int status1 = mkdir(&root_folder_path[0], 0777);
     int status2 = mkdir(&personal_folder_path[0], 0777);
@@ -268,56 +315,12 @@ int user_folder_setup(string new_username){
 
     if (status1 == 0 && status2 == 0 && status3 == 0){
         cout << "User " << new_username << " folders created successfully" << endl << endl;
+        write_to_metadata(name_to_sha256(new_username),new_username);
         return 0;
     } else {
         cerr << "Failed to create user folders. Please check permission and try again " << endl;
         return 1;
     }
-}
-
-// Give it a file or directory name, return the SHA-256 hash value
-string name_to_sha256(string name) {
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256_CTX sha256;
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256, name.c_str(), name.size());
-    SHA256_Final(hash, &sha256);
-    stringstream ss;
-    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-    {
-        ss << hex << setw(2) << setfill('0') << (int)hash[i];
-    }
-    return ss.str();
-}
-
-// Read metadata.json, use sha value as key to get back the file or directory name
-string sha256_to_name(string sha) {
-    ifstream ifs("metadata.json");
-    Json::Value metadata;
-    Json::CharReaderBuilder builder;
-    JSONCPP_STRING err;
-    Json::parseFromStream(builder, ifs, &metadata, &err);
-
-    string name = metadata[sha].asString();
-    return name;
-}
-
-// In mkfile and mkdir, we need to calculate the key: value pair and store it in metadata.json
-void write_to_metadata(string sha, string name) {
-    ifstream ifs("metadata.json");
-    Json::Value metadata;
-    Json::CharReaderBuilder builder;
-    JSONCPP_STRING err;
-    Json::parseFromStream(builder, ifs, &metadata, &err);
-
-    // Add a new key-value pair to the Json::Value object
-    metadata[sha] = name;
-
-    // Write the modified Json::Value object back to the JSON file
-    ofstream ofs("metadata.json");
-    Json::StreamWriterBuilder writerBuilder;
-    unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
-    writer->write(metadata, &ofs);
 }
 
 void cmd_adduser(string new_username){
@@ -673,6 +676,82 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
     cout << "File '" << filename << "' has been successfully shared with user '" << target_username << "'" << endl;
 }
 
+void command_mkdir(vector<string>& dir, string new_dir, string username) {
+    string cur_dir;
+    for (string str:dir) {
+            cur_dir = cur_dir + '/' + str;
+        }
+    new_dir = std::filesystem::current_path().string() + "/filesystem/" + username + cur_dir + '/' + new_dir;
+    char* dirname = strdup(new_dir.c_str());
+    if(username != "Admin"){
+        if (!dir.empty()){
+            if (cur_dir.substr(0,7) == "/shared")
+            {
+                cout << "Forbidden" << endl;
+            }
+            else{
+                if (mkdir(dirname, 0777) == -1)
+                    cerr << "Error: directory exists."<< endl;
+                else
+                    cout << "Directory created"; 
+            }           
+        }
+        else{
+            cout << "Forbidden" << endl;
+        }
+ 
+    }
+    else{
+        cout << "Invalid command for admin!" << endl;
+    }
+}
+
+
+void command_ls(vector<string>&dir, string username){
+    // construct current directory string
+    string cur_dir;
+    bool upper_dir = false;
+    cout << "d -> ."<< endl;
+    if (username == "Admin"){
+        cur_dir = std::filesystem::current_path().string() + "/filesystem/";
+    }
+    else{
+        cur_dir = std::filesystem::current_path().string() + "/filesystem/" + username;
+    }
+    for (string str : dir) {
+        if (!str.empty()) {
+            cur_dir = cur_dir + '/' + str;
+            upper_dir = true;
+        }
+    }
+    if (upper_dir){
+        cout << "d -> .." << endl;
+    }
+    
+    //iterate directory
+    const std::filesystem::path path = std::filesystem::u8path(cur_dir); // sanity check for encoding
+    for (const auto & entry : filesystem::directory_iterator(path)){
+        string prefix;
+        string full_path = entry.path();
+        if (filesystem::is_directory(filesystem::status(full_path))){
+            prefix = "d -> ";
+        }
+        else{
+            prefix = "f -> ";
+        }
+        string display_path = full_path.substr(cur_dir.length() + 1);
+        std::cout << prefix + display_path << endl;
+    }
+}
+
+bool isWhitespace(std::string s){
+    for(int index = 0; index < s.length(); index++){
+        if(!std::isspace(s[index]))
+            return false;
+    }
+    return true;
+}
+
 int main(int argc, char** argv) {
 
     string username, user_command, key_name;
@@ -695,6 +774,9 @@ int main(int argc, char** argv) {
 
         int folder_result = initial_folder_setup();
         if (folder_result == 1) {return 1;}
+
+        write_to_metadata(name_to_sha256("personal"), "personal");
+        write_to_metadata(name_to_sha256("shared"), "shared");
 
         initial_adminkey_setup();
 
@@ -747,18 +829,17 @@ int main(int argc, char** argv) {
         else if (user_command.substr(0, 2) == "cd" && user_command.substr(2, 1) == " ") {
             command_cd(dir, user_command.substr(3), username);
         }
-
         // 3. ls  
         //
-        // else if (user_command ....) {
-
-        // }
+        else if (user_command == "ls") {
+            command_ls(dir, username);
+        }
 
         // 4. mkdir  
         //
-        // else if (user_command ....) {
-
-        // }
+        else if (user_command.substr(0,5) == "mkdir" && user_command.substr(5,1) == " " && !isWhitespace(user_command.substr(6)) ) {
+            command_mkdir(dir, user_command.substr(6), username);
+        }
 
         /* File commands section*/
 

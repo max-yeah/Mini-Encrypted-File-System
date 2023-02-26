@@ -25,8 +25,9 @@ Run the fileserver binary:
 
 <br>
 
-Tree structure of the files and encrypted filesystem
+Tree-structure overview of the files and encrypted filesystem
 
-(The random numbers appear in private keys are made up for demo purpose)
+(The random numbers appear in private keys are made up for demonstration purpose)
 
-![Tree structure](https://user-images.githubusercontent.com/26541990/219998278-e29e85cb-1196-4f06-87dd-e1716cec621d.png)
+![CleanShot 2023-02-26 at 10 00 59](https://user-images.githubusercontent.com/26541990/221427977-c3cb4e62-7b02-49eb-9987-a6018b8955d3.png)
+

@@ -609,7 +609,6 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
     string hashed_username = name_to_sha256(username);
     string hashed_filename = name_to_sha256(filename);
     string filepath = "./filesystem/" + hashed_username + hashed_pwd + "/" + hashed_filename;
-    // cout << "FUll PATH: " << filepath << endl;
 
     ifstream ifs;
     ifs.open(filepath);
@@ -627,12 +626,6 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
     ifs.read(file_content, full_size);
     ifs.close();
 
-    // debug to see contents in hex
-    // cout << file_content << endl;
-    // for(int i = 0; i<full_size; ++i) {
-    //     cout << hex << (int) file_content[i];
-    // }
-
     // check that the user cannot share to themselves
     if (target_username == username) {
         cout << "You cannot share files to yourself." << endl;
@@ -643,14 +636,14 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
     RSA *target_public_key;
     RSA *private_key;
     string hashed_target_username = name_to_sha256(target_username);
-    target_public_key = read_RSAkey("public", "./publickeys/" + target_username + "_publickey");
+    target_public_key = read_RSAkey("public", "./publickeys/" + name_to_sha256(target_username + "_publickey"));
 
     if (target_public_key == NULL){
         cout << "User '" << target_username << "' does not exists." << endl;
         return;
     }
 
-    private_key = read_RSAkey("private", "./filesystem/" + hashed_username + "/" + key_name + "_privatekey");
+    private_key = read_RSAkey("private", "./filesystem/" + hashed_username + "/" + name_to_sha256(key_name + "_privatekey"));
 
     // decrypt file for copying
     char *decrypted_file_content = new char[full_size];
@@ -659,8 +652,6 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
         cout << "An error occurred during file share" << endl;
         return;
     }
-    // cout << "decrypted_file_content:" << endl;
-    // cout << decrypted_file_content << endl;
 
     // encrypt shared file with target's public key
     char *share_encrypted_content = (char*)malloc(RSA_size(target_public_key));

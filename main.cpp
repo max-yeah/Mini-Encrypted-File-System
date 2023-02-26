@@ -16,7 +16,7 @@
 #include <iomanip>
 #include <openssl/sha.h>
 #include <jsoncpp/json/json.h>
-
+#include <sys/types.h>
 
 using namespace std;
 
@@ -102,7 +102,7 @@ void create_RSA(string key_name) {
     } else {
         // normal user's public key & private key file creation
         string publickey_path = "./publickeys/" + username + "_publickey";
-        string privatekey_path = "filesystem/" + username + "/" + key_name + "_privatekey";
+        string privatekey_path = "filesystem/" + name_to_sha256(username) + "/" + key_name + "_privatekey";
         string privatekey_foradmin_path = "./privatekeys/" + username ;
         
         RSA   *rsa = NULL;
@@ -204,6 +204,7 @@ int initial_folder_setup(){
     Json::StreamWriterBuilder writerBuilder;
     unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
     writer->write(metadata, &ofs);
+
     return 0;
 }
 
@@ -238,7 +239,7 @@ int login_authentication(string key_name){
     if (username == "Admin"){
         private_key_path = key_name + "_privatekey";
     } else {
-        private_key_path = "./filesystem/" + username + "/" + key_name + "_privatekey";
+        private_key_path = "./filesystem/" + name_to_sha256(username) + "/" + key_name + "_privatekey";
     }
     private_key = read_RSAkey("private", private_key_path);
     
@@ -303,9 +304,9 @@ bool check_invalid_username(string username){
 }
 
 int user_folder_setup(string new_username){
-    string root_folder_path = "filesystem/" + new_username;
-    string personal_folder_path = root_folder_path + "/personal";
-    string shared_folder_path = root_folder_path + "/shared";
+    string root_folder_path = "filesystem/" + name_to_sha256(new_username);
+    string personal_folder_path = root_folder_path + "/" + name_to_sha256("personal");
+    string shared_folder_path = root_folder_path + "/" + name_to_sha256("shared");
 
     int status1 = mkdir(&root_folder_path[0], 0777);
     int status2 = mkdir(&personal_folder_path[0], 0777);
@@ -313,6 +314,7 @@ int user_folder_setup(string new_username){
 
     if (status1 == 0 && status2 == 0 && status3 == 0){
         cout << "User " << new_username << " folders created successfully" << endl << endl;
+        write_to_metadata(name_to_sha256(new_username),new_username);
         return 0;
     } else {
         cerr << "Failed to create user folders. Please check permission and try again " << endl;
@@ -357,7 +359,9 @@ void command_pwd(vector<string>& dir) {
 
 void command_mkfile(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& contents)
 {
-    std::string full_path = "filesystem/" + username + "/" + curr_dir + filename;
+    string hashed_filename = name_to_sha256(filename);
+    write_to_metadata(hashed_filename, filename);
+    std::string full_path = "filesystem/" + name_to_sha256(username) + "/" + curr_dir + hashed_filename;
 
     char *message = new char[contents.length() + 1];
     strcpy(message, contents.c_str());
@@ -380,7 +384,8 @@ void command_mkfile(const std::string& username, const std::string& filename, co
 
 std::string command_cat(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& key_name)
 {
-    std::string full_path = "filesystem/" + username + "/" + curr_dir + filename;
+    string hashed_filename = name_to_sha256(filename);
+    std::string full_path = "filesystem/" + name_to_sha256(username) + "/" + curr_dir + hashed_filename;
 
     struct stat s;
     if(stat(full_path.c_str(), &s) == 0)
@@ -414,7 +419,7 @@ std::string command_cat(const std::string& username, const std::string& filename
 
     std::string private_key_path;
     RSA *private_key;
-    private_key_path = "./filesystem/" + username + "/" + key_name + "_privatekey";
+    private_key_path = "./filesystem/" + name_to_sha256(username) + "/" + key_name + "_privatekey";
 
     private_key = read_RSAkey("private", private_key_path);
 
@@ -430,7 +435,8 @@ std::string command_cat(const std::string& username, const std::string& filename
 
 std::string command_cat_admin(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& key_name)
 {
-    std::string full_path = "filesystem/" + curr_dir + filename;
+    string hashed_filename = name_to_sha256(filename);
+    std::string full_path = "filesystem/" + curr_dir + hashed_filename;
 
     struct stat s;
     if(stat(full_path.c_str(), &s) == 0 )
@@ -669,6 +675,82 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
     cout << "File '" << filename << "' has been successfully shared with user '" << target_username << "'" << endl;
 }
 
+void command_mkdir(vector<string>& dir, string new_dir, string username) {
+    string cur_dir;
+    for (string str:dir) {
+            cur_dir = cur_dir + '/' + str;
+        }
+    new_dir = std::filesystem::current_path().string() + "/filesystem/" + username + cur_dir + '/' + new_dir;
+    char* dirname = strdup(new_dir.c_str());
+    if(username != "Admin"){
+        if (!dir.empty()){
+            if (cur_dir.substr(0,7) == "/shared")
+            {
+                cout << "Forbidden" << endl;
+            }
+            else{
+                if (mkdir(dirname, 0777) == -1)
+                    cerr << "Error: directory exists."<< endl;
+                else
+                    cout << "Directory created"; 
+            }           
+        }
+        else{
+            cout << "Forbidden" << endl;
+        }
+ 
+    }
+    else{
+        cout << "Invalid command for admin!" << endl;
+    }
+}
+
+
+void command_ls(vector<string>&dir, string username){
+    // construct current directory string
+    string cur_dir;
+    bool upper_dir = false;
+    cout << "d -> ."<< endl;
+    if (username == "Admin"){
+        cur_dir = std::filesystem::current_path().string() + "/filesystem/";
+    }
+    else{
+        cur_dir = std::filesystem::current_path().string() + "/filesystem/" + username;
+    }
+    for (string str : dir) {
+        if (!str.empty()) {
+            cur_dir = cur_dir + '/' + str;
+            upper_dir = true;
+        }
+    }
+    if (upper_dir){
+        cout << "d -> .." << endl;
+    }
+    
+    //iterate directory
+    const std::filesystem::path path = std::filesystem::u8path(cur_dir); // sanity check for encoding
+    for (const auto & entry : filesystem::directory_iterator(path)){
+        string prefix;
+        string full_path = entry.path();
+        if (filesystem::is_directory(filesystem::status(full_path))){
+            prefix = "d -> ";
+        }
+        else{
+            prefix = "f -> ";
+        }
+        string display_path = full_path.substr(cur_dir.length() + 1);
+        std::cout << prefix + display_path << endl;
+    }
+}
+
+bool isWhitespace(std::string s){
+    for(int index = 0; index < s.length(); index++){
+        if(!std::isspace(s[index]))
+            return false;
+    }
+    return true;
+}
+
 int main(int argc, char** argv) {
 
     string username, user_command, key_name;
@@ -691,6 +773,9 @@ int main(int argc, char** argv) {
 
         int folder_result = initial_folder_setup();
         if (folder_result == 1) {return 1;}
+
+        write_to_metadata(name_to_sha256("personal"), "personal");
+        write_to_metadata(name_to_sha256("shared"), "shared");
 
         initial_adminkey_setup();
 
@@ -743,18 +828,17 @@ int main(int argc, char** argv) {
         else if (user_command.substr(0, 2) == "cd" && user_command.substr(2, 1) == " ") {
             command_cd(dir, user_command.substr(3), username);
         }
-
         // 3. ls  
         //
-        // else if (user_command ....) {
-
-        // }
+        else if (user_command == "ls") {
+            command_ls(dir, username);
+        }
 
         // 4. mkdir  
         //
-        // else if (user_command ....) {
-
-        // }
+        else if (user_command.substr(0,5) == "mkdir" && user_command.substr(5,1) == " " && !isWhitespace(user_command.substr(6)) ) {
+            command_mkdir(dir, user_command.substr(6), username);
+        }
 
         /* File commands section*/
 
@@ -767,19 +851,22 @@ int main(int argc, char** argv) {
         else if (splits[0] == "cat")
         {
             std::string curr_dir;
+            std::string curr_dir_hashed;
             for (const string& str:dir) {
                 curr_dir.append(str);
+                curr_dir_hashed.append(name_to_sha256(str));
                 curr_dir.append("/");
+                curr_dir_hashed.append("/");
             }
 
             if (username == "Admin")
             {
-                std::string contents = command_cat_admin(dir[0], splits[1], curr_dir, key_name);
+                std::string contents = command_cat_admin(dir[0], splits[1], curr_dir_hashed, key_name);
                 std::cout << contents << endl;
             }
             else
             {
-                std::string contents = command_cat(username, splits[1], curr_dir, key_name);
+                std::string contents = command_cat(username, splits[1], curr_dir_hashed, key_name);
                 std::cout << contents << endl;
             }
         }
@@ -793,9 +880,12 @@ int main(int argc, char** argv) {
         else if (splits[0] == "mkfile")
         {
             std::string curr_dir;
+            std::string curr_dir_hashed;
             for (const string& str:dir) {
                 curr_dir.append(str);
+                curr_dir_hashed.append(name_to_sha256(str));
                 curr_dir.append("/");
+                curr_dir_hashed.append("/");
             }
 
             if (username == "Admin")
@@ -822,7 +912,7 @@ int main(int argc, char** argv) {
                 continue;
             }
 
-            command_mkfile(username, splits[1], curr_dir, splits[2]);
+            command_mkfile(username, splits[1], curr_dir_hashed, splits[2]);
         }
 
         /* Admin specific feature */

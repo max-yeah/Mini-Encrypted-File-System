@@ -7,3 +7,4 @@ filesystem/
 fileserver
 Admin_*_privatekey
 metadata.json
+build/

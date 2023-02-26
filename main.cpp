@@ -359,7 +359,7 @@ void command_mkfile(const std::string& username, const std::string& filename, co
 {
     string hashed_filename = name_to_sha256(filename);
     write_to_metadata(hashed_filename, filename);
-    std::string full_path = "filesystem/" + username + "/" + curr_dir + hashed_filename;
+    std::string full_path = "filesystem/" + name_to_sha256(username) + "/" + curr_dir + hashed_filename;
 
     char *message = new char[contents.length() + 1];
     strcpy(message, contents.c_str());
@@ -383,7 +383,7 @@ void command_mkfile(const std::string& username, const std::string& filename, co
 std::string command_cat(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& key_name)
 {
     string hashed_filename = name_to_sha256(filename);
-    std::string full_path = "filesystem/" + username + "/" + curr_dir + hashed_filename;
+    std::string full_path = "filesystem/" + name_to_sha256(username) + "/" + curr_dir + hashed_filename;
 
     struct stat s;
     if(stat(full_path.c_str(), &s) == 0)
@@ -593,7 +593,7 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
         current_dir += "/" + hashed_dir;
     }
     string hashed_filename = name_to_sha256(filename);
-    string filepath = "./filesystem/" + username + current_dir + "/" + hashed_filename;
+    string filepath = "./filesystem/" + name_to_sha256(username) + current_dir + "/" + hashed_filename;
     // cout << "FUll PATH: " << filepath << endl;
 
     ifstream ifs;
@@ -635,7 +635,7 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
         return;
     }
 
-    private_key = read_RSAkey("private", "./filesystem/" + username + "/" + key_name + "_privatekey");
+    private_key = read_RSAkey("private", "./filesystem/" + name_to_sha256(username) + "/" + key_name + "_privatekey");
 
     // decrypt file for copying
     char *decrypted_file_content = new char[full_size];
@@ -657,7 +657,7 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
 
     // directory exists?
     string hashed_username = name_to_sha256(username);
-    string target_share_directory = "./filesystem/" + target_username + "/shared/" + hashed_username;
+    string target_share_directory = "./filesystem/" + name_to_sha256(target_username) + "/shared/" + hashed_username;
     // cout << "Target directory:" << target_share_directory << endl;
     if (!filesystem::is_directory(filesystem::status(target_share_directory))) {
         int dir_create_status = mkdir(&target_share_directory[0], 0777);

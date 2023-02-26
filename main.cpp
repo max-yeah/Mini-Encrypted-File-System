@@ -674,13 +674,13 @@ void write_to_metadata(string sha, string name) {
 void command_mkdir(vector<string>& dir, string new_dir, string username) {
     string cur_dir;
     for (string str:dir) {
-            cur_dir = std::filesystem::current_path().string() + "/filesystem/" + username + '/'+ str + '/';
+            cur_dir = cur_dir + str + '/';
         }
-    new_dir = cur_dir + new_dir;
+    new_dir = std::filesystem::current_path().string() + "/filesystem/" + username + '/' + cur_dir + new_dir;
     char* dirname = strdup(new_dir.c_str());
     if(username != "Admin"){
         if (!dir.empty()){
-            if (std::find(dir.begin(), dir.end(), "shared") != dir.end())
+            if (cur_dir == "shared/")
             {
                 cout << "Forbidden" << endl;
             }
@@ -705,6 +705,7 @@ void command_mkdir(vector<string>& dir, string new_dir, string username) {
 void command_ls(vector<string>&dir, string username){
     // construct current directory string
     string cur_dir;
+    bool upper_dir = false;
     cout << "d -> ."<< endl;
     if (username == "Admin"){
         cur_dir = std::filesystem::current_path().string() + "/filesystem/";
@@ -714,9 +715,12 @@ void command_ls(vector<string>&dir, string username){
     }
     for (string str : dir) {
         if (!str.empty()) {
-            cur_dir = cur_dir + "/" + str;
-            cout << "d -> .." << endl;
+            cur_dir = cur_dir + '/' + str;
+            upper_dir = true;
         }
+    }
+    if (upper_dir){
+        cout << "d -> .." << endl;
     }
     
     //iterate directory

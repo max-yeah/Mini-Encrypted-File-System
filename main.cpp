@@ -20,7 +20,6 @@
 
 using namespace std;
 
-
 // Give it a file or directory name, return the SHA-256 hash value
 string name_to_sha256(string name) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
@@ -522,11 +521,11 @@ void command_cd(vector<string>& dir, string change_dir, string username) {
     // convert new directory to string in order to use std::filesystem functions
     string check_dir = filesystem::current_path().string() + "/" + "filesystem";
     if (username != "Admin") {
-        check_dir = check_dir + "/" + username;
+        check_dir = check_dir + "/" + name_to_sha256(username);
     }
     for (string str : new_dir) {
         if (!str.empty()) {
-            check_dir = check_dir + "/" + str;
+            check_dir = check_dir + "/" + name_to_sha256(str);
         }
     }
     // cout << "TEST: " << check_dir << endl;
@@ -843,19 +842,22 @@ int main(int argc, char** argv) {
         else if (splits[0] == "cat")
         {
             std::string curr_dir;
+            std::string curr_dir_hashed;
             for (const string& str:dir) {
                 curr_dir.append(str);
+                curr_dir_hashed.append(name_to_sha256(str));
                 curr_dir.append("/");
+                curr_dir_hashed.append("/");
             }
 
             if (username == "Admin")
             {
-                std::string contents = command_cat_admin(dir[0], splits[1], curr_dir, key_name);
+                std::string contents = command_cat_admin(dir[0], splits[1], curr_dir_hashed, key_name);
                 std::cout << contents << endl;
             }
             else
             {
-                std::string contents = command_cat(username, splits[1], curr_dir, key_name);
+                std::string contents = command_cat(username, splits[1], curr_dir_hashed, key_name);
                 std::cout << contents << endl;
             }
         }
@@ -869,9 +871,12 @@ int main(int argc, char** argv) {
         else if (splits[0] == "mkfile")
         {
             std::string curr_dir;
+            std::string curr_dir_hashed;
             for (const string& str:dir) {
                 curr_dir.append(str);
+                curr_dir_hashed.append(name_to_sha256(str));
                 curr_dir.append("/");
+                curr_dir_hashed.append("/");
             }
 
             if (username == "Admin")
@@ -898,7 +903,7 @@ int main(int argc, char** argv) {
                 continue;
             }
 
-            command_mkfile(username, splits[1], curr_dir, splits[2]);
+            command_mkfile(username, splits[1], curr_dir_hashed, splits[2]);
         }
 
         /* Admin specific feature */

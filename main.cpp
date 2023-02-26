@@ -692,8 +692,6 @@ void command_mkdir(vector<string>& dir, string new_dir, string username) {
     for (string str:dir) {
             cur_dir = cur_dir + '/' + str;
         }
-    new_dir = std::filesystem::current_path().string() + "/filesystem/" + username + cur_dir + '/' + new_dir;
-    char* dirname = strdup(new_dir.c_str());
     if(username != "Admin"){
         if (!dir.empty()){
             if (cur_dir.substr(0,7) == "/shared")
@@ -701,6 +699,9 @@ void command_mkdir(vector<string>& dir, string new_dir, string username) {
                 cout << "Forbidden" << endl;
             }
             else{
+                write_to_metadata(name_to_sha256(new_dir),new_dir);
+                new_dir = std::filesystem::current_path().string() + "/filesystem/" + name_to_sha256(username) + '/' + name_to_sha256(cur_dir.substr(1)) + '/' + name_to_sha256(new_dir);
+                char* dirname = strdup(new_dir.c_str());
                 if (mkdir(dirname, 0777) == -1)
                     cerr << "Error: directory exists."<< endl;
                 else
@@ -710,7 +711,6 @@ void command_mkdir(vector<string>& dir, string new_dir, string username) {
         else{
             cout << "Forbidden" << endl;
         }
- 
     }
     else{
         cout << "Invalid command for admin!" << endl;
@@ -727,11 +727,11 @@ void command_ls(vector<string>&dir, string username){
         cur_dir = std::filesystem::current_path().string() + "/filesystem/";
     }
     else{
-        cur_dir = std::filesystem::current_path().string() + "/filesystem/" + username;
+        cur_dir = std::filesystem::current_path().string() + "/filesystem/" + name_to_sha256(username);
     }
     for (string str : dir) {
         if (!str.empty()) {
-            cur_dir = cur_dir + '/' + str;
+            cur_dir = cur_dir + '/' + name_to_sha256(str);
             upper_dir = true;
         }
     }
@@ -750,8 +750,9 @@ void command_ls(vector<string>&dir, string username){
         else{
             prefix = "f -> ";
         }
-        string display_path = full_path.substr(cur_dir.length() + 1);
+        string display_path = sha256_to_name(full_path.substr(cur_dir.length() + 1));
         std::cout << prefix + display_path << endl;
+
     }
 }
 

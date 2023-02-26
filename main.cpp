@@ -711,7 +711,7 @@ void command_ls(vector<string>&dir, string username){
         cur_dir = std::filesystem::current_path().string() + "/filesystem/";
     }
     else{
-        cur_dir = std::filesystem::current_path().string() + "/filesystem/" + username + '/';
+        cur_dir = std::filesystem::current_path().string() + "/filesystem/" + username;
     }
     for (string str : dir) {
         if (!str.empty()) {
@@ -734,7 +734,7 @@ void command_ls(vector<string>&dir, string username){
         else{
             prefix = "f -> ";
         }
-        string display_path = full_path.substr(cur_dir.length());
+        string display_path = full_path.substr(cur_dir.length() + 1);
         std::cout << prefix + display_path << endl;
     }
 }

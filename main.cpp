@@ -631,19 +631,23 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
         cout << "You cannot share files to yourself." << endl;
         return;
     }
+    
+    RSA *private_key;
+    string private_key_path = "./filesystem/" + hashed_username + "/" + name_to_sha256(key_name + "_privatekey");
+    private_key = read_RSAkey("private", private_key_path);
+    if (private_key_path == filepath) {
+        cout << "You cannot share your private key." << endl;
+        return;
+    }
 
     // check that target username exists (a valid user have a public key)
     RSA *target_public_key;
-    RSA *private_key;
     string hashed_target_username = name_to_sha256(target_username);
     target_public_key = read_RSAkey("public", "./publickeys/" + name_to_sha256(target_username + "_publickey"));
-
     if (target_public_key == NULL){
         cout << "User '" << target_username << "' does not exists." << endl;
         return;
     }
-
-    private_key = read_RSAkey("private", "./filesystem/" + hashed_username + "/" + name_to_sha256(key_name + "_privatekey"));
 
     // decrypt file for copying
     char *decrypted_file_content = new char[full_size];

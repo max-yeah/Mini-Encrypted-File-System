@@ -240,7 +240,7 @@ int login_authentication(string key_name){
     if (username == "Admin"){
         private_key_path = key_name + "_privatekey";
     } else {
-        private_key_path = "./filesystem/" + username + "/" + key_name + "_privatekey";
+        private_key_path = "./filesystem/" + name_to_sha256(username) + "/" + key_name + "_privatekey";
     }
     private_key = read_RSAkey("private", private_key_path);
     
@@ -360,7 +360,9 @@ void command_pwd(vector<string>& dir) {
 
 void command_mkfile(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& contents)
 {
-    std::string full_path = "filesystem/" + username + "/" + curr_dir + filename;
+    string hashed_filename = name_to_sha256(filename);
+    write_to_metadata(hashed_filename, filename);
+    std::string full_path = "filesystem/" + name_to_sha256(username) + "/" + curr_dir + hashed_filename;
 
     char *message = new char[contents.length() + 1];
     strcpy(message, contents.c_str());
@@ -383,7 +385,8 @@ void command_mkfile(const std::string& username, const std::string& filename, co
 
 std::string command_cat(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& key_name)
 {
-    std::string full_path = "filesystem/" + username + "/" + curr_dir + filename;
+    string hashed_filename = name_to_sha256(filename);
+    std::string full_path = "filesystem/" + name_to_sha256(username) + "/" + curr_dir + hashed_filename;
 
     struct stat s;
     if(stat(full_path.c_str(), &s) == 0)
@@ -417,7 +420,7 @@ std::string command_cat(const std::string& username, const std::string& filename
 
     std::string private_key_path;
     RSA *private_key;
-    private_key_path = "./filesystem/" + username + "/" + key_name + "_privatekey";
+    private_key_path = "./filesystem/" + name_to_sha256(username) + "/" + key_name + "_privatekey";
 
     private_key = read_RSAkey("private", private_key_path);
 
@@ -433,7 +436,8 @@ std::string command_cat(const std::string& username, const std::string& filename
 
 std::string command_cat_admin(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& key_name)
 {
-    std::string full_path = "filesystem/" + curr_dir + filename;
+    string hashed_filename = name_to_sha256(filename);
+    std::string full_path = "filesystem/" + curr_dir + hashed_filename;
 
     struct stat s;
     if(stat(full_path.c_str(), &s) == 0 )
@@ -672,7 +676,6 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
     cout << "File '" << filename << "' has been successfully shared with user '" << target_username << "'" << endl;
 }
 
-
 void command_mkdir(vector<string>& dir, string new_dir, string username) {
     string cur_dir;
     for (string str:dir) {
@@ -748,7 +751,6 @@ bool isWhitespace(std::string s){
     }
     return true;
 }
-
 
 int main(int argc, char** argv) {
 

@@ -1,3 +1,0 @@
-/Users/chuqiao/Documents/Github/CMPT-785-miniEFS/build/CMakeFiles/CMPT_785_miniEFS.dir
-/Users/chuqiao/Documents/Github/CMPT-785-miniEFS/build/CMakeFiles/edit_cache.dir
-/Users/chuqiao/Documents/Github/CMPT-785-miniEFS/build/CMakeFiles/rebuild_cache.dir

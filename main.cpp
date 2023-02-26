@@ -20,6 +20,51 @@
 
 using namespace std;
 
+// Give it a file or directory name, return the SHA-256 hash value
+string name_to_sha256(string name) {
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, name.c_str(), name.size());
+    SHA256_Final(hash, &sha256);
+    stringstream ss;
+    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+    {
+        ss << hex << setw(2) << setfill('0') << (int)hash[i];
+    }
+    return ss.str();
+}
+
+// Read metadata.json, use sha value as key to get back the file or directory name
+string sha256_to_name(string sha) {
+    ifstream ifs("metadata.json");
+    Json::Value metadata;
+    Json::CharReaderBuilder builder;
+    JSONCPP_STRING err;
+    Json::parseFromStream(builder, ifs, &metadata, &err);
+
+    string name = metadata[sha].asString();
+    return name;
+}
+
+// In mkfile and mkdir, we need to calculate the key: value pair and store it in metadata.json
+void write_to_metadata(string sha, string name) {
+    ifstream ifs("metadata.json");
+    Json::Value metadata;
+    Json::CharReaderBuilder builder;
+    JSONCPP_STRING err;
+    Json::parseFromStream(builder, ifs, &metadata, &err);
+    
+    // Add a new key-value pair to the Json::Value object
+    metadata[sha] = name;
+
+    // Write the modified Json::Value object back to the JSON file
+    ofstream ofs("metadata.json");
+    Json::StreamWriterBuilder writerBuilder;
+    unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
+    writer->write(metadata, &ofs);
+}
+
 // This function will create public/private key pairs under /publickeys folder and /privatekeys folder
 // keyfile's naming convension: username_randomnumber_publickey and username_randomnumber_privatekey
 // Example: Admin_2018509453_privatekey
@@ -470,11 +515,11 @@ void command_cd(vector<string>& dir, string change_dir, string username) {
     // convert new directory to string in order to use std::filesystem functions
     string check_dir = filesystem::current_path().string() + "/" + "filesystem";
     if (username != "Admin") {
-        check_dir = check_dir + "/" + username;
+        check_dir = check_dir + "/" + name_to_sha256(username);
     }
     for (string str : new_dir) {
         if (!str.empty()) {
-            check_dir = check_dir + "/" + str;
+            check_dir = check_dir + "/" + name_to_sha256(str);
         }
     }
     // cout << "TEST: " << check_dir << endl;
@@ -622,52 +667,6 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
     string target_filepath = target_share_directory + "/" + filename;
     create_encrypted_file(target_filepath, share_encrypted_content, target_public_key);
     cout << "File '" << filename << "' has been successfully shared with user '" << target_username << "'" << endl;
-}
-
-
-// Give it a file or directory name, return the SHA-256 hash value
-string name_to_sha256(string name) {
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256_CTX sha256;
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256, name.c_str(), name.size());
-    SHA256_Final(hash, &sha256);
-    stringstream ss;
-    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-    {
-        ss << hex << setw(2) << setfill('0') << (int)hash[i];
-    }
-    return ss.str();
-}
-
-// Read metadata.json, use sha value as key to get back the file or directory name
-string sha256_to_name(string sha) {
-    ifstream ifs("metadata.json");
-    Json::Value metadata;
-    Json::CharReaderBuilder builder;
-    JSONCPP_STRING err;
-    Json::parseFromStream(builder, ifs, &metadata, &err);
-
-    string name = metadata[sha].asString();
-    return name;
-}
-
-// In mkfile and mkdir, we need to calculate the key: value pair and store it in metadata.json
-void write_to_metadata(string sha, string name) {
-    ifstream ifs("metadata.json");
-    Json::Value metadata;
-    Json::CharReaderBuilder builder;
-    JSONCPP_STRING err;
-    Json::parseFromStream(builder, ifs, &metadata, &err);
-    
-    // Add a new key-value pair to the Json::Value object
-    metadata[sha] = name;
-
-    // Write the modified Json::Value object back to the JSON file
-    ofstream ofs("metadata.json");
-    Json::StreamWriterBuilder writerBuilder;
-    unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
-    writer->write(metadata, &ofs);
 }
 
 int main(int argc, char** argv) {

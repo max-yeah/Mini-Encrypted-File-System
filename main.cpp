@@ -551,7 +551,7 @@ bool is_admin(string username) {
 void command_sharefile(string username, string key_name, vector<string>& dir, string user_command) {
     // check who is the username
     if (is_admin(username) == true) {
-        cout << "You are not allowed to share." << endl;
+        cout << "Forbidden" << endl;
         return;
     }
 
@@ -574,7 +574,7 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
         }
     } else {
         cout << "Invalid share command. You should use command: " << endl;
-        cout << "share <filename> username" << endl;
+        cout << "share <filename> <username>" << endl;
         return;
     }
 
@@ -593,7 +593,7 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
     ifstream ifs;
     ifs.open(filepath);
     if (!(ifs && ifs.is_open())) {
-        cout << "Invalid filename. '" << filename << "' does not exist." << endl;
+        cout << "Filename '" << filename << "' does not exist." << endl;
         return;
     }
     ifs.seekg(0, ios::end);
@@ -622,10 +622,10 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
     RSA *target_public_key;
     RSA *private_key;
     string hashed_target_username = name_to_sha256(target_username);
-    target_public_key = read_RSAkey("public", "./publickeys/" + hashed_target_username + "_publickey");
+    target_public_key = read_RSAkey("public", "./publickeys/" + target_username + "_publickey");
 
     if (target_public_key == NULL){
-        cout << "Invalid username is provided. User does not exits." << endl;
+        cout << "User '" << target_username << "' does not exists." << endl;
         return;
     }
 
@@ -650,7 +650,7 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
     }
 
     // directory exists?
-    string target_share_directory = "./filesystem/" + hashed_target_username + name_to_sha256("/shared/") + hashed_username;
+    string target_share_directory = "./filesystem/" + hashed_target_username + "/" + name_to_sha256("shared") +"/" + hashed_username;
     // cout << "Target directory:" << target_share_directory << endl;
     if (!filesystem::is_directory(filesystem::status(target_share_directory))) {
         int dir_create_status = mkdir(&target_share_directory[0], 0777);

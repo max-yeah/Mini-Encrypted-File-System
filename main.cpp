@@ -669,18 +669,30 @@ void write_to_metadata(string sha, string name) {
     Json::StreamWriterBuilder writerBuilder;
     unique_ptr<Json::StreamWriter> writer(writerBuilder.newStreamWriter());
     writer->write(metadata, &ofs);
+}
 
 void command_mkdir(vector<string>& dir, string new_dir, string username) {
+    string cur_dir;
+    for (string str:dir) {
+            cur_dir = std::filesystem::current_path().string() + "/filesystem/" + username + '/'+ str + '/';
+        }
+    new_dir = cur_dir + new_dir;
     char* dirname = strdup(new_dir.c_str());
     if(username != "Admin"){
         if (!dir.empty()){
-            if (mkdir(dirname, 0777) == -1)
-                cerr << "Error: " << strerror(errno) << endl;
-            else
-                cout << "Directory created"; 
+            if (std::find(dir.begin(), dir.end(), "shared") != dir.end())
+            {
+                cout << "Forbidden" << endl;
+            }
+            else{
+                if (mkdir(dirname, 0777) == -1)
+                    cerr << "Error: directory exists."<< endl;
+                else
+                    cout << "Directory created"; 
+            }           
         }
         else{
-            cout << "Please create content in your /personal or /shared directory" << endl;
+            cout << "Forbidden" << endl;
         }
  
     }

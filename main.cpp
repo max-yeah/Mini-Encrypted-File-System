@@ -76,9 +76,14 @@ void create_RSA(string key_name) {
 
         string publickey_name = username + "_publickey";
         string privatekey_name = key_name + "_privatekey";
+        string publickey_name_sha = name_to_sha256(publickey_name);
+        string privatekey_name_sha = name_to_sha256(privatekey_name);
 
-        string publickey_path = "./publickeys/" + name_to_sha256(publickey_name);
-        string privatekey_path = name_to_sha256(privatekey_name);
+        string publickey_path = "./publickeys/" + publickey_name_sha;
+        string privatekey_path = privatekey_name_sha;
+
+        write_to_metadata(publickey_name_sha, publickey_name);
+        write_to_metadata(privatekey_name_sha, privatekey_name);
         
         RSA   *rsa = NULL;
         FILE  *fp  = NULL;
@@ -106,6 +111,12 @@ void create_RSA(string key_name) {
         // normal user's public key & private key file creation
         string publickey_name = username + "_publickey";
         string privatekey_name = key_name + "_privatekey";
+
+        string publickey_name_sha = name_to_sha256(publickey_name);
+        string privatekey_name_sha = name_to_sha256(privatekey_name);
+
+        write_to_metadata(publickey_name_sha, publickey_name);
+        write_to_metadata(privatekey_name_sha, privatekey_name);
 
 
         string publickey_path = "./publickeys/" + name_to_sha256(publickey_name);

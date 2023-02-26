@@ -359,7 +359,7 @@ void command_mkfile(const std::string& username, const std::string& filename, co
 {
     string hashed_filename = name_to_sha256(filename);
     write_to_metadata(hashed_filename, filename);
-    std::string full_path = "filesystem/" + username + "/" + curr_dir + hashed_filename;
+    std::string full_path = "filesystem/" + name_to_sha256(username) + "/" + curr_dir + hashed_filename;
 
     char *message = new char[contents.length() + 1];
     strcpy(message, contents.c_str());
@@ -383,7 +383,7 @@ void command_mkfile(const std::string& username, const std::string& filename, co
 std::string command_cat(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& key_name)
 {
     string hashed_filename = name_to_sha256(filename);
-    std::string full_path = "filesystem/" + username + "/" + curr_dir + hashed_filename;
+    std::string full_path = "filesystem/" + name_to_sha256(username) + "/" + curr_dir + hashed_filename;
 
     struct stat s;
     if(stat(full_path.c_str(), &s) == 0)

@@ -744,7 +744,7 @@ void command_ls(vector<string>&dir, string username){
         else{
             prefix = "f -> ";
         }
-        string display_path = sha256_to_name(full_path.substr(cur_dir.length() + 1));
+        string display_path = sha256_to_name(full_path.substr(cur_dir.length()));
         std::cout << prefix + display_path << endl;
 
     }

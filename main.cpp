@@ -1021,7 +1021,7 @@ int main(int argc, char** argv) {
                 continue;
             }
             struct stat st;
-            string root_folder_path = "filesystem/" + new_username;
+            string root_folder_path = "filesystem/" + name_to_sha256(new_username);
             if (stat(&root_folder_path[0], &st) != -1){
                 cout << "User " << new_username << " already exists" << endl;
                 continue;

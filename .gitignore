@@ -1,10 +1,4 @@
-.idea/
-cmake-build-*/
-.vscode/
-privatekeys/
-publickeys/
-filesystem/
-fileserver
-Admin_*_privatekey
-metadata.json
-build/
+*
+!main.cpp
+!README.md
+!CMakeLists.txt

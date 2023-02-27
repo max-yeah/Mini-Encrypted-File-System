@@ -738,13 +738,19 @@ void command_ls(vector<string>&dir, string username){
     for (const auto & entry : filesystem::directory_iterator(path)){
         string prefix;
         string full_path = entry.path();
+        string sub_path = full_path.substr(cur_dir.length());
         if (filesystem::is_directory(filesystem::status(full_path))){
             prefix = "d -> ";
         }
         else{
             prefix = "f -> ";
         }
-        string display_path = sha256_to_name(full_path.substr(cur_dir.length()));
+        string display_path;
+        if (sub_path[0] == '/') {
+            display_path = sha256_to_name(full_path.substr(cur_dir.length() + 1));
+        } else {
+            display_path = sha256_to_name(full_path.substr(cur_dir.length()));
+        }
         std::cout << prefix + display_path << endl;
 
     }

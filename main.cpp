@@ -609,6 +609,16 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
     string hashed_filename = name_to_sha256(filename);
     string filepath = "./filesystem/" + hashed_username + hashed_pwd + "/" + hashed_filename;
 
+    struct stat s;
+    if(stat(filepath.c_str(), &s) == 0)
+    {
+        if(s.st_mode & S_IFDIR)
+        {
+            cout << "Cannot share a directory, please enter a file name" << endl;
+            return;
+        }
+    }
+
     ifstream ifs;
     ifs.open(filepath);
     if (!(ifs && ifs.is_open())) {
@@ -977,7 +987,7 @@ int main(int argc, char** argv) {
             }
 
             size_t pos = user_command.find(" ", user_command.find(" ") + 1);
-            string file_contents = user_command.substr(pos);
+            string file_contents = user_command.substr(pos + 1);
 
             if (strlen(file_contents.c_str()) > 213)
             {

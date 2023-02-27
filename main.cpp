@@ -389,7 +389,7 @@ void command_mkfile(const std::string& username, const std::string& filename, co
 
     char *encrypt;
 
-    string public_key_path = "./publickeys/" + username + "_publickey";
+    string public_key_path = "./publickeys/" + name_to_sha256(username + "_publickey");
     RSA *public_key = read_RSAkey("public", public_key_path);
 
     encrypt = (char*)malloc(RSA_size(public_key));
@@ -417,7 +417,7 @@ std::string command_cat(const std::string& username, const std::string& filename
             return "";
         }
     }
-    cout << "full path:" << full_path << endl;
+
     std::ifstream infile(full_path);
 
     if (!(infile && infile.is_open())) {
@@ -429,7 +429,7 @@ std::string command_cat(const std::string& username, const std::string& filename
     size_t length = infile.tellg();
     infile.seekg(0, std::ios::beg);
 
-    string public_key_path = "./publickeys/" + username + "_publickey";
+    string public_key_path = "./publickeys/" + name_to_sha256(username + "_publickey");
     RSA *public_key = read_RSAkey("public", public_key_path);
 
     char *contentss = (char*)malloc(RSA_size(public_key));;
@@ -440,8 +440,7 @@ std::string command_cat(const std::string& username, const std::string& filename
 
     std::string private_key_path;
     RSA *private_key;
-    private_key_path = "./filesystem/" + name_to_sha256(username) + "/" + key_name + "_privatekey";
-
+    private_key_path = "./filesystem/" + name_to_sha256(username) + "/" + name_to_sha256(key_name + "_privatekey");
     private_key = read_RSAkey("private", private_key_path);
 
     decrypt = (char*)malloc(RSA_size(public_key));
@@ -480,7 +479,7 @@ std::string command_cat_admin(const std::string& username, const std::string& fi
     size_t length = infile.tellg();
     infile.seekg(0, std::ios::beg);
 
-    string public_key_path = "./publickeys/" + username + "_publickey";
+    string public_key_path = "./publickeys/" + name_to_sha256(username + "_publickey");
     RSA *public_key = read_RSAkey("public", public_key_path);
 
     char *contentss = (char*)malloc(RSA_size(public_key));;
@@ -491,7 +490,7 @@ std::string command_cat_admin(const std::string& username, const std::string& fi
 
     std::string private_key_path;
     RSA *private_key;
-    private_key_path = "./privatekeys/" + username;
+    private_key_path = "./privatekeys/" + name_to_sha256(username);
 
     private_key = read_RSAkey("private", private_key_path);
 
@@ -906,6 +905,18 @@ int main(int argc, char** argv) {
                 curr_dir_hashed.append("/");
             }
 
+            if (curr_dir.empty())
+            {
+                cout << "Forbidden" << endl;
+                continue;
+            }
+
+            if (splits[1].find("_publickey", 0) != std::string::npos || splits[1].find("_privatekey", 0) != std::string::npos)
+            {
+                std::cout << "Forbidden" << endl;
+                continue;
+            }
+
             if (username == "Admin")
             {
                 std::string contents = command_cat_admin(dir[0], splits[1], curr_dir_hashed, key_name);
@@ -944,6 +955,12 @@ int main(int argc, char** argv) {
             if (curr_dir.empty() || curr_dir.rfind("shared", 0) == 0)
             {
                 cout << "Forbidden" << endl;
+                continue;
+            }
+
+            if (splits[1].find("_publickey", 0) != std::string::npos || splits[1].find("_privatekey", 0) != std::string::npos)
+            {
+                std::cout << "Forbidden" << endl;
                 continue;
             }
 

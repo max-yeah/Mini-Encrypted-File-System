@@ -976,13 +976,16 @@ int main(int argc, char** argv) {
                 continue;
             }
 
-            if (strlen(splits[2].c_str()) > 213)
+            size_t pos = user_command.find(" ", user_command.find(" ") + 1);
+            string file_contents = user_command.substr(pos);
+
+            if (strlen(file_contents.c_str()) > 213)
             {
                 cout << "Max file content allowed is 213 characters" << endl;
                 continue;
             }
 
-            command_mkfile(username, splits[1], curr_dir_hashed, splits[2]);
+            command_mkfile(username, splits[1], curr_dir_hashed, file_contents);
         }
 
         /* Admin specific feature */

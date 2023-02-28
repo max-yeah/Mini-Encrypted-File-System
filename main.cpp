@@ -96,7 +96,7 @@ void create_RSA(string key_name) {
         RSA *keypair = NULL;
         keypair = RSA_new();
         //2048 bit key
-        RSA_generate_key_ex(keypair, 2048, bne, NULL);
+        RSA_generate_key_ex(keypair, 4096, bne, NULL);
 
         //generate public key and store to local
         fp = fopen(&publickey_path[0], "w");
@@ -134,7 +134,7 @@ void create_RSA(string key_name) {
 
         RSA *keypair = NULL;
         keypair = RSA_new();
-        RSA_generate_key_ex(keypair, 2048, bne, NULL);
+        RSA_generate_key_ex(keypair, 4096, bne, NULL);
 
         //generate public key and store to local
         fp = fopen(&publickey_path[0], "w");
@@ -989,9 +989,9 @@ int main(int argc, char** argv) {
             size_t pos = user_command.find(" ", user_command.find(" ") + 1);
             string file_contents = user_command.substr(pos + 1);
 
-            if (strlen(file_contents.c_str()) > 213)
+            if (strlen(file_contents.c_str()) > 300)
             {
-                cout << "Max file content allowed is 213 characters" << endl;
+                cout << "Max file content allowed is 300 characters" << endl;
                 continue;
             }
 

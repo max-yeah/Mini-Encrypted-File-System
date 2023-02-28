@@ -694,17 +694,19 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
 void command_mkdir(vector<string>& dir, string new_dir, string username) {
     string cur_dir;
     for (string str:dir) {
-            cur_dir = cur_dir + '/' + str;
-        }
+        cur_dir = cur_dir + '/' + name_to_sha256(str);
+    }
+
     if(username != "Admin"){
         if (!dir.empty()){
-            if (cur_dir.substr(0,7) == "/shared")
+            if (cur_dir.substr(1,65) == name_to_sha256("shared"))
             {
-                cout << "Forbidden" << endl;
+                cout << "Forbidden: Cannot create directory in /shared" << endl;
             }
             else{
                 write_to_metadata(name_to_sha256(new_dir),new_dir);
-                new_dir = std::filesystem::current_path().string() + "/filesystem/" + name_to_sha256(username) + '/' + name_to_sha256(cur_dir.substr(1)) + '/' + name_to_sha256(new_dir);
+                new_dir = std::filesystem::current_path().string() + "/filesystem/" + name_to_sha256(username) + '/' + cur_dir.substr(1) + '/' + name_to_sha256(new_dir);
+
                 char* dirname = strdup(new_dir.c_str());
                 if (mkdir(dirname, 0777) == -1)
                     cerr << "Error: directory exists."<< endl;

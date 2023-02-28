@@ -23,12 +23,5 @@ Run the fileserver binary:
 ./fileserver key_name
 ```
 
-<br>
-
-Tree-structure overview of the files and encrypted filesystem
-
-(The random numbers appear in private keys are made up for demonstration purpose)
-
-![CleanShot 2023-02-26 at 10 05 12](https://user-images.githubusercontent.com/26541990/221428172-46d32f98-f0d5-498b-a119-b07e1ba3f388.png)
 
 

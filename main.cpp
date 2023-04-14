@@ -697,6 +697,10 @@ void command_mkdir(vector<string>& dir, string new_dir, string username) {
         cur_dir = cur_dir + '/' + name_to_sha256(str);
     }
 
+    if (new_dir == "." or new_dir == ".."){
+        cout << "Forbidden" << endl;
+    }
+
     if(username != "Admin"){
         if (!dir.empty()){
             if (cur_dir.substr(1,65) == name_to_sha256("shared"))

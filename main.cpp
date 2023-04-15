@@ -711,7 +711,8 @@ void command_mkdir(vector<string>& dir, string new_dir, string username) {
                 if (mkdir(dirname, 0777) == -1)
                     cerr << "Error: directory exists."<< endl;
                 else
-                    cout << "Directory created" << endl; 
+                    cout << "Directory created" << endl;
+                free(dirname);
             }           
         }
         else{

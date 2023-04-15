@@ -39,8 +39,23 @@ string csprng() {
     return result_stream.str();
 }
 
+// Read metadata.json, use sha value as key to get back the file or directory name
+string sha256_to_name(string sha) {
+    ifstream ifs("metadata.json");
+    Json::Value metadata;
+    Json::CharReaderBuilder builder;
+    JSONCPP_STRING err;
+    Json::parseFromStream(builder, ifs, &metadata, &err);
+
+    string name = metadata[sha].asString();
+    return name;
+}
+
 // Give it a file or directory name, return the SHA-256 hash value
 string name_to_sha256(string name) {
+    // Append salt before calculating the sha256 hash. So attacker can no longer find the original by checking common hash value websites
+    string salt = sha256_to_name("salt");
+    name += salt;
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
@@ -52,18 +67,6 @@ string name_to_sha256(string name) {
         ss << hex << setw(2) << setfill('0') << (int)hash[i];
     }
     return ss.str();
-}
-
-// Read metadata.json, use sha value as key to get back the file or directory name
-string sha256_to_name(string sha) {
-    ifstream ifs("metadata.json");
-    Json::Value metadata;
-    Json::CharReaderBuilder builder;
-    JSONCPP_STRING err;
-    Json::parseFromStream(builder, ifs, &metadata, &err);
-
-    string name = metadata[sha].asString();
-    return name;
 }
 
 // In mkfile and mkdir, we need to calculate the key: value pair and store it in metadata.json
@@ -857,6 +860,9 @@ int main(int argc, char** argv) {
 
         write_to_metadata(name_to_sha256("personal"), "personal");
         write_to_metadata(name_to_sha256("shared"), "shared");
+        //Generate random salt value using cryptographically secure random function
+        string random_salt = csprng();
+        write_to_metadata("salt", random_salt);
 
         initial_adminkey_setup();
 

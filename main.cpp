@@ -3,6 +3,7 @@
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
+#include <openssl/rand.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <cstdlib>
@@ -19,6 +20,24 @@
 #include <sys/types.h>
 
 using namespace std;
+
+
+string csprng() {
+    constexpr size_t rsize = 32;
+    unsigned char ran_buf[rsize];
+    ostringstream result_stream;
+
+    if (RAND_bytes(ran_buf, rsize) != 1) {
+        cout << "Error generating private key name";
+        return "";
+    }
+
+    for (size_t i = 0; i < rsize; i++) {
+        result_stream << hex << setw(2) << setfill('0') << static_cast<int>(ran_buf[i]);
+    }
+
+    return result_stream.str();
+}
 
 // Give it a file or directory name, return the SHA-256 hash value
 string name_to_sha256(string name) {
@@ -226,15 +245,14 @@ int initial_folder_setup(){
     return 0;
 }
 
-void initial_adminkey_setup(){
-
-    // Providing a seed value
-	srand((unsigned) time(NULL));
-	// Get a random number
-	int random = rand() % 9999999999;
-
+void initial_adminkey_setup() {
     string username = "Admin";
-    string key_name = username + "_" + to_string(random);
+
+    string random_byte_hex = csprng();
+    if (random_byte_hex.length() == 0) {
+        return;
+    }
+    string key_name = username + "_" + random_byte_hex;
 
     create_RSA(key_name);
     cout << "Admin Public/Private key pair has been created." << endl;
@@ -343,25 +361,25 @@ int user_folder_setup(string new_username){
     }
 }
 
-void cmd_adduser(string new_username){
+void cmd_adduser(string new_username) {
     // create user folders
     int result = user_folder_setup(new_username);
-    if (result) {return;}
+    if (result) {
+        return;
+    }
 
     // create users RSA public key and private keys (2 copies)
-    // Providing a seed value
-	srand((unsigned) time(NULL));
-	// Get a random number
-	int random = rand() % 9999999999;
-
-    string key_name = new_username + "_" + to_string(random);
+    string random_byte_hex = csprng();
+    if (random_byte_hex.length() == 0) {
+        return;
+    }
+    string key_name = new_username + "_" + random_byte_hex;
     create_RSA(key_name);
     cout << "User " << new_username << " Public/Private key pair has been created." << endl;
     cout << "The private key_name is " << key_name << endl;
     cout << "Please give this key_name to user and let user know that it must be remained secret to him/herself only." << endl;
     cout << "User " << new_username << " can login by command: " << endl;
     cout << "./fileserver " << key_name << endl << endl;
-
 }
 
 

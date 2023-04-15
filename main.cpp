@@ -914,6 +914,12 @@ int main(int argc, char** argv) {
         // 5. cat
         else if (splits[0] == "cat")
         {
+            if (splits.size() < 2)
+            {
+                cout << "Please provide filename" << endl;
+                continue;
+            }
+
             std::string curr_dir;
             std::string curr_dir_hashed;
             for (const string& str:dir) {
@@ -955,6 +961,12 @@ int main(int argc, char** argv) {
         // 7. mkfile
         else if (splits[0] == "mkfile")
         {
+            if (splits.size() < 3 || splits[2].empty())
+            {
+                cout << "File cannot be empty" << endl;
+                continue;
+            }
+
             std::string curr_dir;
             std::string curr_dir_hashed;
             for (const string& str:dir) {
@@ -979,12 +991,6 @@ int main(int argc, char** argv) {
             if (splits[1].find("_publickey", 0) != std::string::npos || splits[1].find("_privatekey", 0) != std::string::npos)
             {
                 std::cout << "Forbidden" << endl;
-                continue;
-            }
-
-            if (splits.size() < 3 || splits[2].empty())
-            {
-                cout << "File cannot be empty" << endl;
                 continue;
             }
 

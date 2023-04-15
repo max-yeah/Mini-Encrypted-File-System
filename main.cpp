@@ -453,7 +453,9 @@ std::string command_cat(const std::string& username, const std::string& filename
         cout << "An error occurred in private_decrypt() method" << endl;
     }
 
-    return decrypt;
+    std::string output = decrypt;
+    free(decrypt);
+    return output;
 }
 
 std::string command_cat_admin(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& key_name)

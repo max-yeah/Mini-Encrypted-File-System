@@ -963,7 +963,7 @@ int main(int argc, char** argv) {
         {
             if (splits.size() < 3 || splits[2].empty())
             {
-                cout << "File cannot be empty" << endl;
+                cout << "Filename and file contents cannot be empty" << endl;
                 continue;
             }
 

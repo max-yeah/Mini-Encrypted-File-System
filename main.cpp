@@ -400,6 +400,9 @@ void command_mkfile(const std::string& username, const std::string& filename, co
     }
 
     create_encrypted_file(full_path, encrypt, public_key);
+
+    free(encrypt);
+    delete[] message;
 }
 
 

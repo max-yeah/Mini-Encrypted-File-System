@@ -421,6 +421,9 @@ void command_mkfile(const std::string& username, const std::string& filename, co
     }
 
     create_encrypted_file(full_path, encrypt, public_key);
+
+    free(encrypt);
+    delete[] message;
 }
 
 
@@ -471,7 +474,9 @@ std::string command_cat(const std::string& username, const std::string& filename
         cout << "An error occurred in private_decrypt() method" << endl;
     }
 
-    return decrypt;
+    std::string output = decrypt;
+    free(decrypt);
+    return output;
 }
 
 std::string command_cat_admin(const std::string& username, const std::string& filename, const std::string& curr_dir, const std::string& key_name)
@@ -732,7 +737,8 @@ void command_mkdir(vector<string>& dir, string new_dir, string username) {
                 if (mkdir(dirname, 0777) == -1)
                     cerr << "Error: directory exists."<< endl;
                 else
-                    cout << "Directory created" << endl; 
+                    cout << "Directory created" << endl;
+                free(dirname);
             }           
         }
         else{

@@ -858,11 +858,12 @@ int main(int argc, char** argv) {
         int folder_result = initial_folder_setup();
         if (folder_result == 1) {return 1;}
 
-        write_to_metadata(name_to_sha256("personal"), "personal");
-        write_to_metadata(name_to_sha256("shared"), "shared");
         //Generate random salt value using cryptographically secure random function
         string random_salt = csprng();
         write_to_metadata("salt", random_salt);
+
+        write_to_metadata(name_to_sha256("personal"), "personal");
+        write_to_metadata(name_to_sha256("shared"), "shared");
 
         initial_adminkey_setup();
 

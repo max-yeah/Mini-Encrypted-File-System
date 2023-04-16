@@ -207,7 +207,6 @@ int public_encrypt(int flen, unsigned char* from, unsigned char* to, RSA* key, i
 
 // This function implement RSA private key decryption
 int private_decrypt(int flen, unsigned char* from, unsigned char* to, RSA* key, int padding) {
-
     int result = RSA_private_decrypt(flen, from, to, key, padding);
     return result;
 }
@@ -413,6 +412,12 @@ void command_mkfile(const std::string& username, const std::string& filename, co
     string public_key_path = "./publickeys/" + name_to_sha256(username + "_publickey");
     RSA *public_key = read_RSAkey("public", public_key_path);
 
+    if (public_key == NULL)
+    {
+        cout << "Error! Public key not found or invalid" << endl;
+        return;
+    }
+
     encrypt = (char*)malloc(RSA_size(public_key));
     int encrypt_length = public_encrypt(strlen(message) + 1, (unsigned char*)message, (unsigned char*)encrypt, public_key, RSA_PKCS1_OAEP_PADDING);
     if(encrypt_length == -1) {
@@ -453,6 +458,12 @@ std::string command_cat(const std::string& username, const std::string& filename
     string public_key_path = "./publickeys/" + name_to_sha256(username + "_publickey");
     RSA *public_key = read_RSAkey("public", public_key_path);
 
+    if (public_key == NULL)
+    {
+        cout << "Error! Public key not found or invalid" << endl;
+        return "";
+    }
+
     char *contentss = (char*)malloc(RSA_size(public_key));;
     infile.read(contentss, length);
     infile.close();
@@ -465,6 +476,12 @@ std::string command_cat(const std::string& username, const std::string& filename
     private_key = read_RSAkey("private", private_key_path);
 
     decrypt = (char*)malloc(RSA_size(public_key));
+
+    if (private_key == NULL)
+    {
+        cout << "Error! Private key not found or invalid" << endl;
+        return "";
+    }
 
     int decrypt_length = private_decrypt(RSA_size(private_key), (unsigned char*)contentss, (unsigned char*)decrypt, private_key, RSA_PKCS1_OAEP_PADDING);
     if(decrypt_length == -1) {
@@ -503,6 +520,12 @@ std::string command_cat_admin(const std::string& username, const std::string& fi
     string public_key_path = "./publickeys/" + name_to_sha256(username + "_publickey");
     RSA *public_key = read_RSAkey("public", public_key_path);
 
+    if (public_key == NULL)
+    {
+        cout << "Error! Public key not found or invalid" << endl;
+        return "";
+    }
+
     char *contentss = (char*)malloc(RSA_size(public_key));;
     infile.read(contentss, length);
     infile.close();
@@ -516,6 +539,12 @@ std::string command_cat_admin(const std::string& username, const std::string& fi
     private_key = read_RSAkey("private", private_key_path);
 
     decrypt = (char*)malloc(RSA_size(public_key));
+
+    if (private_key == NULL)
+    {
+        cout << "Error! Private key not found or invalid" << endl;
+        return "";
+    }
 
     int decrypt_length = private_decrypt(RSA_size(private_key), (unsigned char*)contentss, (unsigned char*)decrypt, private_key, RSA_PKCS1_OAEP_PADDING);
     if(decrypt_length == -1) {
@@ -665,6 +694,10 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
     RSA *private_key;
     string private_key_path = "./filesystem/" + hashed_username + "/" + name_to_sha256(key_name + "_privatekey");
     private_key = read_RSAkey("private", private_key_path);
+    if (private_key == NULL) {
+        cout << "Error! Private key not found or invalid" << endl;
+        return;
+    }
     if (private_key_path == filepath) {
         cout << "You cannot share your private key." << endl;
         return;
@@ -674,6 +707,10 @@ void command_sharefile(string username, string key_name, vector<string>& dir, st
     RSA *target_public_key;
     string hashed_target_username = name_to_sha256(target_username);
     target_public_key = read_RSAkey("public", "./publickeys/" + name_to_sha256(target_username + "_publickey"));
+    if (target_public_key == NULL) {
+        cout << "Error! Public key not found or invalid" << endl;
+        return;
+    }
     if (target_public_key == NULL){
         cout << "User '" << target_username << "' does not exists." << endl;
         return;

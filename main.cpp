@@ -428,11 +428,8 @@ void command_mkfile(const std::string& username, const std::string& filename, co
         string full_path = entry.path();
         string shared_user = sha256_to_name(full_path.substr(13));
         full_path += expected_path_suffix;
-         cout << full_path << endl;
+        // cout << full_path << endl;
         if (filesystem::exists(full_path)) {
-            // TODO: re-encrypt the file for the found file
-            cout << "file shared with user to be updated:" << shared_user << endl;
-            //
             RSA *target_public_key;
             target_public_key = read_RSAkey("public", "./publickeys/" + name_to_sha256(shared_user + "_publickey"));
             if (target_public_key == NULL) {

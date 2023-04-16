@@ -421,6 +421,34 @@ void command_mkfile(const std::string& username, const std::string& filename, co
     }
 
     create_encrypted_file(full_path, encrypt, public_key);
+
+    // check for expected shared file and update it
+    string expected_path_suffix = "/" + name_to_sha256("shared") + "/" + name_to_sha256(username) + "/" + hashed_filename;
+    for (const auto & entry : filesystem::directory_iterator("./filesystem")) {
+        string full_path = entry.path();
+        string shared_user = sha256_to_name(full_path.substr(13));
+        full_path += expected_path_suffix;
+         cout << full_path << endl;
+        if (filesystem::exists(full_path)) {
+            // TODO: re-encrypt the file for the found file
+            cout << "file shared with user to be updated:" << shared_user << endl;
+            //
+            RSA *target_public_key;
+            target_public_key = read_RSAkey("public", "./publickeys/" + name_to_sha256(shared_user + "_publickey"));
+            if (target_public_key == NULL) {
+                // for some reason, the target's public key is lost so we cannot update it
+                continue;
+            }
+
+            char *share_encrypted_content = (char*)malloc(RSA_size(target_public_key));
+            int share_encrypt_length = public_encrypt(contents.length() + 1, (unsigned char*)contents.c_str(), (unsigned char*)share_encrypted_content, target_public_key, RSA_PKCS1_OAEP_PADDING);
+            if (share_encrypt_length == -1) {
+                // failed to encrypt
+                continue;
+            }
+            create_encrypted_file(full_path, share_encrypted_content, target_public_key);
+        }
+    }
 }
 
 

@@ -953,7 +953,7 @@ int main(int argc, char** argv) {
                 continue;
             }
 
-            if (splits[1].find("_publickey", 0) != std::string::npos || splits[1].find("_privatekey", 0) != std::string::npos)
+            if (splits[1].find("_publickey", 0) != std::string::npos || splits[1].find("_privatekey", 0) != std::string::npos || (splits[1].find("..", 0) != std::string::npos))
             {
                 std::cout << "Forbidden" << endl;
                 continue;
@@ -1000,7 +1000,7 @@ int main(int argc, char** argv) {
                 continue;
             }
 
-            if (splits[1].find("_publickey", 0) != std::string::npos || splits[1].find("_privatekey", 0) != std::string::npos)
+            if (splits[1].find("_publickey", 0) != std::string::npos || splits[1].find("_privatekey", 0) != std::string::npos || (splits[1].find("..", 0) != std::string::npos))
             {
                 std::cout << "Forbidden" << endl;
                 continue;

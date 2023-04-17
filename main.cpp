@@ -760,6 +760,11 @@ void command_mkdir(vector<string>& dir, string new_dir, string username) {
         cur_dir = cur_dir + '/' + name_to_sha256(str);
     }
 
+    if (new_dir.find(".") != -1 or new_dir.find("..") != -1 or new_dir.find("/") != -1){
+        cout << "Invalid directory name." << endl;
+        return;
+    }
+
     if(username != "Admin"){
         if (!dir.empty()){
             if (cur_dir.substr(1,65) == name_to_sha256("shared"))
@@ -827,7 +832,9 @@ void command_ls(vector<string>&dir, string username){
         } else {
             display_path = sha256_to_name(full_path.substr(cur_dir.length()));
         }
-        std::cout << prefix + display_path << endl;
+        if (display_path != ""){
+            std::cout << prefix + display_path << endl;
+        }
 
     }
 }

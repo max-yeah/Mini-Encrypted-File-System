@@ -1,6 +1,6 @@
 # CMPT-785-miniEFS
 
-### About the program
+## About the program
 
 Two types of user: 1 Admin and N users.
 
@@ -26,8 +26,9 @@ Admin specific features
 *   Admin should have access to read all user files
 *   `adduser <username>`  - This command should create a keyfile called username\_keyfile on the host which will be used by the user to access the filesystem. If a user with this name already exists, print "User <username> already exists"
 
+</br>
 
-### How to build and run it
+## How to compile and execute the program
 
 The environment we use is Linux. Tested on Ubuntu and Kali.
 
